@@ -1,6 +1,6 @@
 import { createWorker, createScheduler } from "tesseract.js";
 
-export default async function Reader(props: any) {
+export default async function ReadPNG(props: any) {
 	const scheduler = createScheduler();
 	const worker1 = await createWorker("eng");
 	const worker2 = await createWorker("eng");

@@ -1,20 +1,19 @@
 "use client";
 
-import { useRef, useState } from "react";
-import DisplayPDF from "./DisplayPDF";
+import { Suspense, useRef, useState } from "react";
 
-export default function InputPDF() {
+export default function InputPDF({ handlePDFChange }: any) {
 	const [file, setFile] = useState<File>();
 
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const handleChange = (event: any) => {
+		handlePDFChange(event.target.files[0]);
 		setFile(event.target.files[0]);
 	};
 
 	const handleDragOver = (event: any) => {
 		event.preventDefault();
-		console.log(event.target);
 		setFile(event.target.files);
 	};
 
@@ -38,13 +37,6 @@ export default function InputPDF() {
 				<input type="file" onChange={handleChange} hidden ref={inputRef} />
 				<h1>Input PDF</h1>
 			</button>
-			{file ? (
-				<div className="flex w-full">
-					<div className="h-screen w-1/2">
-						<DisplayPDF properties={file}></DisplayPDF>
-					</div>
-				</div>
-			) : null}
 		</div>
 	);
 }
