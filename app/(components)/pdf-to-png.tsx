@@ -10,7 +10,7 @@ import { pdfjs } from "react-pdf";
 
 pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
 
-export default function PdfToPng({ PDF, onChildDataUpdate }: any) {
+function PdfToPng({ PDF, onChildDataUpdate }: any) {
 	useEffect(() => {
 		PDF?.arrayBuffer()
 			.then((arrayBuffer: ArrayBuffer) => {
@@ -80,3 +80,5 @@ export default function PdfToPng({ PDF, onChildDataUpdate }: any) {
 
 	return <div id="canvas" hidden />;
 }
+
+export default PdfToPng;

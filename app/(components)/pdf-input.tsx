@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 
-export default function PdfInput({ onChildDataUpdate }: any) {
+export default function PdfInput({ label, onChildDataUpdate }: any) {
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const handleChange = (event: any) => {
@@ -32,6 +32,7 @@ export default function PdfInput({ onChildDataUpdate }: any) {
 			onClick={() => inputRef?.current?.click()}
 		>
 			<input type="file" onChange={handleChange} hidden ref={inputRef} />
+			{label}
 		</button>
 	);
 }

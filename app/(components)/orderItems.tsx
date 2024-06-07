@@ -4,9 +4,9 @@
 
 import { useEffect, useState } from "react";
 import { ImageLike, Line, Page, createWorker } from "tesseract.js";
-import Client from "./client";
+import OrderItem from "./orderItem";
 
-export default function Clients({ PNGs }: any) {
+export default function OrderItems({ PNGs }: any) {
 	const [pages, setPages] = useState<Array<Page>>(new Array<Page>());
 	const [clients, setClients] = useState<Array<Array<Line>>>(new Array<Array<Line>>());
 
@@ -15,7 +15,7 @@ export default function Clients({ PNGs }: any) {
 	}, [PNGs]);
 
 	useEffect(() => {
-		if (pages) extractClientsOrders(pages);
+		if (pages) extractOrders(pages);
 	}, [pages]);
 
 	async function PNGtoPages(PNGs: ImageLike[]) {
@@ -35,35 +35,37 @@ export default function Clients({ PNGs }: any) {
 		setPages(pages);
 	}
 
-	function extractClientsOrders(pages: any[]) {
+	function extractOrders(pages: any[]) {
 		const lines = pages.reduce((lines: Array<string>, page) => lines.concat(page.lines), new Array<Line>());
 
-		const clientsHeader = lines.findIndex((line: Line) => line.text.includes("Filial Série Nota Data"));
-		if (!clientsHeader) throw Error("Não encontramos por onde começar...");
+		// const ordersHeader = lines.findIndex((line: Line) => line.text.includes("Pedido Série Nota Data"));
+		// if (!ordersHeader) throw Error("Não encontramos por onde começar...");
 
-		const clientsFooter = lines.findIndex((line: Line) => line.text.includes("Total Geral"));
-		if (!clientsFooter) throw Error("Não encontramos por onde começar...");
+		const ordersHeader = 4 - 1;
 
-		const clientsLines = lines.slice(clientsHeader + 1, clientsFooter);
+		const ordersFooter = lines.findIndex((line: Line) => line.text.includes("Total Geral"));
+		if (!ordersFooter) throw Error("Não encontramos o rodapé...");
 
-		const clients = new Array<any>();
+		const ordersLines = lines.slice(ordersHeader + 1, ordersFooter);
+
+		const orders = new Array<any>();
 
 		let lastIndex = 0;
-		clientsLines.forEach((line: Line, index: number) => {
+		ordersLines.forEach((line: Line, index: number) => {
 			if (line.text.includes("Sub-Total")) {
-				clients.push(clientsLines.slice(lastIndex, index + 1));
+				orders.push(ordersLines.slice(lastIndex, index + 1));
 				lastIndex = index + 1;
 			}
 		});
 
-		setClients(clients);
+		setClients(orders);
 	}
 
 	return (
 		<>
 			{clients.map((lines, index) => (
-				<div key={index} className="bg-blue-400	rounded-lg m-3">
-					<Client data={lines} />
+				<div key={index} className="m-3">
+					<OrderItem data={lines} />
 				</div>
 			))}
 		</>

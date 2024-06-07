@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { ImageLike, createWorker } from "tesseract.js";
-import Faturamento from "./billing-by-client";
+import Faturamento from "./billing";
 
 export default function PNGtoText({ PNGs, onChildDataUpdate }: any) {
 	useEffect(() => {

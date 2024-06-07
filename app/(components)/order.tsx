@@ -4,9 +4,9 @@ import { SetStateAction, useState } from "react";
 
 import PdfInput from "./pdf-input";
 import PdfToPng from "./pdf-to-png";
-import Clients from "./clients";
+import OrderItems from "./orderItems";
 
-export default function BillingByClient() {
+export default function Order( {order}: any ) {
 	const [PDF, setPDF] = useState<File>();
 	const [PNGs, setPNGs] = useState<Array<string>>();
 
@@ -18,13 +18,15 @@ export default function BillingByClient() {
 		setPNGs(data);
 	};
 
+    const label = "Pedido nº " + order;
+
 	return (
-		<div>
-			<PdfInput onChildDataUpdate={handlePDFOutput} />
+		<div className="p-3">
+			<PdfInput label={label} onChildDataUpdate={handlePDFOutput} />
 
 			<PdfToPng PDF={PDF} onChildDataUpdate={handlePNGsOutput} />
 
-			<Clients PNGs={PNGs} />
+			<OrderItems PNGs={PNGs} />
 		</div>
 	);
 }
