@@ -7,9 +7,3 @@ export default function Home() {
 		</div>
 	);
 }
-
-/*
-FATURAMENTO
-
-PEDIDOS
-*/

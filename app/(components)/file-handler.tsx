@@ -1,13 +1,9 @@
 import { useRef, useState } from "react";
 
-export default function PdfInput({ label, onChildDataUpdate }: any) {
+function FileHandler({ label, onFileUpdate }: any) {
 	const inputRef = useRef<HTMLInputElement>(null);
 
-	const handleChange = (event: any) => {
-		// setFile(event.target.files[0]);
-
-		onChildDataUpdate(event.target.files[0]);
-	};
+	const handleChange = (event: any) => onFileUpdate(event.target.files[0]);
 
 	const handleDragOver = (event: any) => {
 		// event.preventDefault();
@@ -36,3 +32,5 @@ export default function PdfInput({ label, onChildDataUpdate }: any) {
 		</button>
 	);
 }
+
+export default FileHandler;

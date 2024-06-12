@@ -1,30 +1,54 @@
 "use client";
 
-import { SetStateAction, useState } from "react";
-
-import PdfInput from "./pdf-input";
-import PdfToPng from "./pdf-to-png";
-import Clients from "./clients";
+import { Key, useEffect, useState } from "react";
+import FileHandler from "./file-handler";
+import PDFtoPNG from "./PDF-to-Pages/pdf-to-png";
+import PNGsToPages from "./PDF-to-Pages/png-to-pages";
+import { Line } from "tesseract.js";
+import ScrapeOrdersByClient from "./scrappers/billScrapper";
+import Client from "./Client/client";
 
 export default function Billing() {
+	// Arquivo do faturamento em PDF;
 	const [PDF, setPDF] = useState<File>();
-	const [PNGs, setPNGs] = useState<Array<string>>();
 
-	const handlePDFOutput = (data: SetStateAction<File | undefined>) => {
-		setPDF(data);
-	};
+	// Pedidos identificados;
+	const [ordersByClient, setOrdersByClient] = useState<Array<Array<Line>>>();
 
-	const handlePNGsOutput = (data: SetStateAction<Array<string> | undefined>) => {
-		setPNGs(data);
-	};
+	function onFileUpdate(PDF: File) {
+		setPDF(PDF);
+	}
+
+	useEffect(() => {
+		if (PDF) readPDF(PDF);
+	}, [PDF]);
+
+	async function readPDF(PDF: File) {
+		console.log("PDFtoPNG...");
+		const PNGs = await PDFtoPNG(PDF);
+		// setPNGs(PNGs);
+
+		console.log("PNGsToPages...");
+		const pages = await PNGsToPages(PNGs);
+		// setPages(pages);
+
+		console.log("Faturamento:");
+		const ordersByClient = ScrapeOrdersByClient(pages);
+
+		setOrdersByClient(ordersByClient);
+	}
 
 	return (
-		<div>
-			<PdfInput onChildDataUpdate={handlePDFOutput} />
+		<>
+			<FileHandler label="Faturamento" onFileUpdate={onFileUpdate} />
 
-			<PdfToPng PDF={PDF} onChildDataUpdate={handlePNGsOutput} />
+			<div id="canvas" hidden />
 
-			<Clients PNGs={PNGs} />
-		</div>
+			{ordersByClient?.map((lines: Array<Line>, index: Key) => (
+				<div key={index} className="m-1">
+					<Client lines={lines} />
+				</div>
+			))}
+		</>
 	);
 }
