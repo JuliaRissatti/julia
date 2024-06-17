@@ -40,15 +40,24 @@ export default function Billing() {
 
 	return (
 		<>
-			<FileHandler label="Faturamento" onFileUpdate={onFileUpdate} />
+			<div className="flex items-center justify-center absolute bg-rich-black h-full w-full">
+				<div className="flex flex-col gap-7">
+					<div className="flex w-full justify-center font-semibold">
+						<p>Conferência de faturamento</p>
+					</div>
+					<div className="w-full">
+						<FileHandler label="Faturamento" onFileUpdate={onFileUpdate} />
 
-			<div id="canvas" hidden />
+						<div id="canvas" hidden />
 
-			{ordersByClient?.map((lines: Array<Line>, index: Key) => (
-				<div key={index} className="m-1">
-					<Client lines={lines} />
+						{ordersByClient?.map((lines: Array<Line>, index: Key) => (
+							<div key={index} className="m-1">
+								<Client lines={lines} />
+							</div>
+						))}
+					</div>
 				</div>
-			))}
+			</div>
 		</>
 	);
 }

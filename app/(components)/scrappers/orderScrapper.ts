@@ -7,14 +7,10 @@ function readOrder(pages: Array<Page>) {
 	// Find the order's table beggining
 	const clientsOrdersHeader = lines.findIndex((line: Line) => line.text.includes("Pedido/Item"));
 	if (clientsOrdersHeader < 0) throw Error("Não foi possível encontrar o início da tabela de pedidos.");
-	console.log("clientsOrdersHeader");
-	console.log(clientsOrdersHeader);
 
 	// Find the order's table ending
 	const clientsOrdersFooter = lines.findIndex((line: Line) => line.text.includes("Total Geral"));
 	if (clientsOrdersFooter < 0) throw Error("Não foi possível encontrar o fim da tabela de pedidos.");
-	console.log("clientsOrdersFooter");
-	console.log(clientsOrdersFooter);
 
 	const clientsOrdersLines = lines.slice(clientsOrdersHeader + 1, clientsOrdersFooter);
 

@@ -19,6 +19,8 @@ async function PNGsToPages(PNGs: ImageLike[]) {
 		pages.push(page);
 	}
 
+	console.log(pages)
+
 	return pages;
 }
 

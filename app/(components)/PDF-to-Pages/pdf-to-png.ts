@@ -22,7 +22,7 @@ async function PDFtoPNG(PDF: File) {
 
 		if (!canvasesParentDiv) throw Error('document.getElementById("canvas") could not find any element!');
 
-		const viewport = page.getViewport({ scale: 5 });
+		const viewport = page.getViewport({ scale: 7 });
 
 		const canvas = document.createElement("canvas");
 		canvasesParentDiv.appendChild(canvas);

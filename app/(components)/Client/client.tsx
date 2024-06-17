@@ -2,8 +2,12 @@ import { MalformedClient } from "./errors";
 import { Line } from "tesseract.js";
 import Order from "../Order/order";
 import { MalformedOrder } from "../Order/errors";
+import { useState } from "react";
+import TabPanel from "../TabPanel/tab-panel";
 
 function Client({ lines }: any) {
+	const [isCollapsed, setCollapsed] = useState(true);
+
 	const data: Array<Line> = lines;
 
 	if (data.length < 3)
@@ -31,16 +35,16 @@ function Client({ lines }: any) {
 		}
 	});
 
+	// Mapeia os pedidos verificados a um elemento <Order>
+	const verifiedOrders = verifiedOrdersNumbers.map((order, index) => <Order key={index} orderNumber={order} />);
+
 	return (
 		<>
-			<div className="bg-[#2c369a] rounded-t-lg h-7">
-				<h1 className="text-lg font-semibold align-middle text-center">{name}</h1>
-			</div>
-
-			<div className="bg-[#060c4a] rounded-b-lg">
-				{verifiedOrdersNumbers?.map((lines, index) => (
-					<Order orderNumber={lines} key={index} />
-				))}
+			<div className="rounded-lg">
+				<div className="hover:bg-[#9697a0] cursor-pointer rounded-t-lg" onClick={() => setCollapsed(!isCollapsed)}>
+					<h1 className="text-lg font-semibold align-middle text-center">{name}</h1>
+				</div>
+				{!isCollapsed && <TabPanel tabs={verifiedOrdersNumbers} contents={verifiedOrders} />}
 			</div>
 		</>
 	);

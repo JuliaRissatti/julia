@@ -1,4 +1,5 @@
-import { useRef, useState } from "react";
+import { useRef } from "react";
+import Image from "next/image";
 
 function FileHandler({ label, onFileUpdate }: any) {
 	const inputRef = useRef<HTMLInputElement>(null);
@@ -21,15 +22,26 @@ function FileHandler({ label, onFileUpdate }: any) {
 	};
 
 	return (
-		<button
-			className=" mx-auto p-4 rounded border border-gray-300"
-			onDragOver={handleDragOver}
-			onDrop={handleDrop}
-			onClick={() => inputRef?.current?.click()}
-		>
-			<input type="file" onChange={handleChange} hidden ref={inputRef} />
-			{label}
-		</button>
+		<>
+			<button
+				className="transition ease-in-out hover:scale-110 hover:bg-oxford-blue duration-300"
+				onDragOver={handleDragOver}
+				onDrop={handleDrop}
+				onClick={() => inputRef?.current?.click()}
+			>
+				<div className="rounded border border-lapis-lazulli p-3">
+					<div className="flex justify-between">
+						<div className="relative size-14">
+							<Image className="object-contain" fill src="https://www.svgrepo.com/show/66745/pdf.svg" alt="" />
+						</div>
+						<div className="flex items-center">
+							<p className="align-middle">faça o upload de um faturamento</p>
+						</div>
+					</div>{" "}
+				</div>
+				<input type="file" onChange={handleChange} hidden ref={inputRef} />
+			</button>
+		</>
 	);
 }
 
