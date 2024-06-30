@@ -1,6 +1,6 @@
 import { Line } from "tesseract.js";
 
-class Order {
+export class Order {
 	number: number;
 
 	filial: number | undefined;
