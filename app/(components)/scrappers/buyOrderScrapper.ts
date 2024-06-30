@@ -305,17 +305,13 @@ function readSecondString(text: string) {
 }
 
 function readSubtotal(perfil: string, subtotalString: string) {
-	console.log(subtotalString)
-	const [, amarracoes, pecas, liquido, bruto] =
-		new RegExp(
-			`
-		(?<amarracoes>\\s\\d+\\s).*
-		(?<pecas>\\s\\d+\\s).*
-		(?<liquido>\\b\\d+,\\d{2}).*
-		(?<bruto>\\b\\d+,\\d{2})
-	`,
-			"g"
-		).exec(subtotalString) || [];
+	const amarracoesRegExp = `(?<amarracoes>\\s\\d+\\s)`
+	const pecasRegExp = `(?<pecas>\\s\\d+\\s)`
+	const liquidoRegExp = `(?<liquido>\\b\\d+,\\d{2})`
+	const brutoRegExp = `(?<bruto>\\b\\d+,\\d{2})`
+
+	const subtotalRegExp = new RegExp([amarracoesRegExp, pecasRegExp, liquidoRegExp, brutoRegExp].join(".*"), "g")
+	const [, amarracoes, pecas, liquido, bruto] = subtotalRegExp.exec(subtotalString) || [];
 
 	return { perfil, amarracoes, pecas, liquido, bruto };
 }
