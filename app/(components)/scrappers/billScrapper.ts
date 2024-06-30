@@ -1,6 +1,6 @@
 import { Line, Page } from "tesseract.js";
 
-function ScrapeOrdersByClient(pages: Array<Page>) {
+export default function getOrdersByClient(pages: Array<Page>) {
 	// Concatenate all Lines from all Pages
 	const lines = pages.reduce((lines: Array<Line>, page) => lines.concat(page.lines), new Array<Line>());
 
@@ -12,8 +12,10 @@ function ScrapeOrdersByClient(pages: Array<Page>) {
 	const clientsOrdersFooter = lines.findIndex((line: Line) => line.text.includes("Total Geral"));
 	if (!clientsOrdersFooter) throw Error("Não foi possível encontrar o fim da tabela de pedidos.");
 
+	// Slice content between beggining and ending
 	const clientsOrdersLines = lines.slice(clientsOrdersHeader + 1, clientsOrdersFooter);
 
+	//
 	const ordersByClient = new Array<Array<Line>>();
 
 	let lastIndex = 0;
@@ -26,5 +28,3 @@ function ScrapeOrdersByClient(pages: Array<Page>) {
 
 	return ordersByClient;
 }
-
-export default ScrapeOrdersByClient;

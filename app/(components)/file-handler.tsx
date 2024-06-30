@@ -35,7 +35,7 @@ function FileHandler({ label, onFileUpdate }: any) {
 							<Image className="object-contain" fill src="https://www.svgrepo.com/show/66745/pdf.svg" alt="" />
 						</div>
 						<div className="flex items-center">
-							<p className="align-middle">faça o upload de um faturamento</p>
+							<p className="align-middle">{label}</p>
 						</div>
 					</div>{" "}
 				</div>

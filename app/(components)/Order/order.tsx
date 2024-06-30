@@ -2,54 +2,85 @@
 
 import { useEffect, useState } from "react";
 
-import PDFtoPNG from "../PDF-to-Pages/pdf-to-png";
-import PNGsToPages from "../PDF-to-Pages/png-to-pages";
 import FileHandler from "../file-handler";
-import { Line } from "tesseract.js";
-import readOrder from "../scrappers/orderScrapper";
-import OrderItem from "../Order-Item /order-item";
+import readBuyOrder from "../scrappers/buyOrderScrapper";
+import readSellOrder from "../scrappers/sellOrderScrapper";
+import ItemsByBuyProduct from "../TableView/itemsByBuyProduct";
+
+import { SellItem } from "@/app/models/sell-item";
+import { BuyProduct } from "@/app/models/buy-product";
+import readPNG from "@/app/Services/Tesseract/read-png";
+import ItemsBySellOrder from "../TableView/sellItems";
+import convertToPNG from "@/app/Services/PDF-Conversion/pdf-to-png";
 
 export default function Order({ orderNumber }: any) {
-	// Arquivo do Pedido em PDF;
-	const [PDF, setPDF] = useState<File>();
+	/*
+	 * Funções concernentes ao pedido de compra
+	 */
 
-	// Items identificados;
-	const [orderItems, setOrderItems] = useState<Array<Array<Line>>>();
+	// Arquivos do pedido de compra e venda em PDF;
+	const [buyOrderPDF, setBuyOrderPDF] = useState<File>();
+	const [sellOrderPDF, setSellOrderPDF] = useState<File>();
 
-	function onFileUpdate(PDF: File) {
-		setPDF(PDF);
-	}
+	// Produtos de compra  e venda identificados;
+	const [buyProducts, setBuyProducts] = useState<Array<BuyProduct>>();
+	const [sellProducts, setSellProducts] = useState<Array<SellItem>>();
 
 	useEffect(() => {
-		if (PDF) readPDF(PDF);
-	}, [PDF]);
+		if (buyOrderPDF) readBuyOrderPDF(buyOrderPDF);
+	}, [buyOrderPDF]);
 
-	async function readPDF(PDF: File) {
-		const PNGs = await PDFtoPNG(PDF);
+	useEffect(() => {
+		if (sellOrderPDF) readSellOrderPDF(sellOrderPDF);
+	}, [sellOrderPDF]);
+
+	async function readBuyOrderPDF(buyOrderPDF: File) {
+		const PNGs = await convertToPNG(buyOrderPDF, false);
 		// setPNGs(PNGs);
 
-		console.log("PNGsToPages...");
-		const pages = await PNGsToPages(PNGs);
+		const pages = await readPNG(PNGs);
 		// setPages(pages);
 
-		const orderItems = readOrder(pages);
+		const buyOrderProducts = readBuyOrder(orderNumber, pages);
 
-		setOrderItems(orderItems);
+		setBuyProducts(buyOrderProducts);
 	}
 
-	const label = "Pedido nº " + orderNumber;
+	async function readSellOrderPDF(buyOrderPDF: File) {
+		const PNGs = await convertToPNG(buyOrderPDF, true);
+		// setPNGs(PNGs);
+
+		const pages = await readPNG(PNGs);
+		// setPages(pages);
+
+		if (!buyProducts) return;
+
+		const sellOrderProducts = readSellOrder(orderNumber, buyProducts, pages);
+
+		setSellProducts(sellOrderProducts);
+	}
 
 	return (
 		<>
-			<div className="p-3">
-				<FileHandler label={label} onFileUpdate={onFileUpdate} />
+			<div className="m-3">
+				<FileHandler label={"Pedido nº " + orderNumber} onFileUpdate={(file: File) => setBuyOrderPDF(file)} />
 			</div>
 
-			{orderItems?.map((lines, index) => (
-				<div key={index} className="m-1">
-					<OrderItem orderNumber={orderNumber} lines={lines} />
+			{buyProducts?.map((product, index) => (
+				<div key={index} className="m-3">
+					<ItemsByBuyProduct id={product.id} items={product.items} subtotal={product.subtotal} />
 				</div>
 			))}
+
+			<div className="m-3">
+				<FileHandler label={"Pedido de Venda"} onFileUpdate={(file: File) => setSellOrderPDF(file)} />
+			</div>
+
+			{sellProducts && (
+				<div className="m-3">
+					<ItemsBySellOrder sellItems={sellProducts} />
+				</div>
+			)}
 		</>
 	);
 }

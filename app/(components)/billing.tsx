@@ -24,15 +24,12 @@ export default function Billing() {
 	}, [PDF]);
 
 	async function readPDF(PDF: File) {
-		console.log("PDFtoPNG...");
 		const PNGs = await PDFtoPNG(PDF);
 		// setPNGs(PNGs);
 
-		console.log("PNGsToPages...");
 		const pages = await PNGsToPages(PNGs);
 		// setPages(pages);
 
-		console.log("Faturamento:");
 		const ordersByClient = ScrapeOrdersByClient(pages);
 
 		setOrdersByClient(ordersByClient);

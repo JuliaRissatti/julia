@@ -2,7 +2,7 @@
 
 import { ImageLike, Line, Page, createWorker } from "tesseract.js";
 
-async function PNGsToPages(PNGs: ImageLike[]) {
+async function readPNG(PNGs: ImageLike[]) {
 	let pages: Array<Page> = new Array<Page>();
 
 	for (const PNG of PNGs) {
@@ -19,9 +19,7 @@ async function PNGsToPages(PNGs: ImageLike[]) {
 		pages.push(page);
 	}
 
-	console.log(pages)
-
 	return pages;
 }
 
-export default PNGsToPages;
+export default readPNG;

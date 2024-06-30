@@ -44,6 +44,7 @@ function Client({ lines }: any) {
 				<div className="hover:bg-[#9697a0] cursor-pointer rounded-t-lg" onClick={() => setCollapsed(!isCollapsed)}>
 					<h1 className="text-lg font-semibold align-middle text-center">{name}</h1>
 				</div>
+
 				{!isCollapsed && <TabPanel tabs={verifiedOrdersNumbers} contents={verifiedOrders} />}
 			</div>
 		</>

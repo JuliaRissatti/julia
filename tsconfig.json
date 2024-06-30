@@ -21,6 +21,6 @@
       "@/*": ["./*"]
     }
   },
-  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", "app/Services/React-PDF/read-document.ts", "app/Services/Image-Processing/noise-removal.js", "app/Services/Image-Processing/helper.js", "app/Services/Image-Processing/pre-process.ts"],
   "exclude": ["node_modules"]
 }

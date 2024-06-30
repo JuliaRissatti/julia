@@ -13,8 +13,6 @@ function Tab({
 	const unactiveStyle = "bg-slate-500 font-medium";
 	const activeStyle = "bg-azure font-semibold";
 
-	console.log(activeTab === number);
-
 	return (
 		<>
 			<div className="">

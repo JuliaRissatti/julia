@@ -1,19 +1,10 @@
-// https://github.com/mozilla/pdf.js/discussions/17622
-// https://stackoverflow.com/questions/62744470/turn-pdf-into-array-of-pngs-using-javascript-with-pdf-js
-// https://stackoverflow.com/questions/53715465/can-i-set-state-insetStateide-a-useeffect-hook
-// https://stackoverflow.com/questions/35400722/pdf-image-quality-is-bad-using-pdf-js
+import readDocument from "@/app/Services/React-PDF/read-document";
+import processImage from "../Image-Processing/pre-process";
 
-import { pdfjs } from "react-pdf";
-
-pdfjs.GlobalWorkerOptions.workerSrc = `//unpkg.com/pdfjs-dist@${pdfjs.version}/build/pdf.worker.min.js`;
-
-async function PDFtoPNG(PDF: File) {
+async function convertToPNG(PDF: File, imagePreProcessing: boolean) {
+	const documentProxy = await readDocument(PDF);
 
 	let PNGs = new Array<string>();
-
-	const arrayBuffer = await PDF.arrayBuffer();
-
-	const documentProxy = await pdfjs.getDocument(arrayBuffer).promise;
 
 	for (let numPage = 1; numPage <= documentProxy.numPages; numPage++) {
 		const page = await documentProxy.getPage(numPage);
@@ -39,12 +30,20 @@ async function PDFtoPNG(PDF: File) {
 
 		await page.render(renderContext).promise;
 
+		const processedImageData = processImage(canvas);
+
+		if (imagePreProcessing && processedImageData) {
+			context.putImageData(processedImageData, 0, 0);
+		}
+
 		PNGs.push(canvas.toDataURL("image/png"));
-		
-		canvas.remove();
+
+		if (!imagePreProcessing) {
+			canvas.remove();
+		}
 	}
 
 	return PNGs;
 }
 
-export default PDFtoPNG;
+export default convertToPNG;
