@@ -1,3 +1,5 @@
+import { Line } from "tesseract.js";
+
 class Order {
 	number: number;
 

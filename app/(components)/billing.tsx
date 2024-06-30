@@ -1,12 +1,13 @@
 "use client";
 
-import { Key, useEffect, useState } from "react";
-import FileHandler from "./file-handler";
-import PDFtoPNG from "./PDF-to-Pages/pdf-to-png";
-import PNGsToPages from "./PDF-to-Pages/png-to-pages";
 import { Line } from "tesseract.js";
-import ScrapeOrdersByClient from "./scrappers/billScrapper";
+import { Key, useEffect, useState } from "react";
+
 import Client from "./Client/client";
+import FileHandler from "./file-handler";
+import readPNG from "../Services/Tesseract/read-png";
+import ScrapeOrdersByClient from "./scrappers/billScrapper";
+import convertToPNG from "../Services/PDF-Conversion/pdf-to-png";
 
 export default function Billing() {
 	// Arquivo do faturamento em PDF;
@@ -24,10 +25,10 @@ export default function Billing() {
 	}, [PDF]);
 
 	async function readPDF(PDF: File) {
-		const PNGs = await PDFtoPNG(PDF);
+		const PNGs = await convertToPNG(PDF, false);
 		// setPNGs(PNGs);
 
-		const pages = await PNGsToPages(PNGs);
+		const pages = await readPNG(PNGs);
 		// setPages(pages);
 
 		const ordersByClient = ScrapeOrdersByClient(pages);

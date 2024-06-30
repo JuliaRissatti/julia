@@ -14,24 +14,17 @@ export async function POST(request: NextRequest) {
 	const pdfParser = new PDFParser();
 	// const pdfParser = new PDFParser(undefined, undefined, "089591");
 
-	return new Promise((resolve, reject) => {
-		pdfParser.on("pdfParser_dataError", (error: any) => {
-			const reason = NextResponse.json({ error: error }, { status: 500 });
+	return new Promise<Response>((resolve, reject) => {
+		pdfParser.on("pdfParser_dataError", (error: Record<"parserError", Error>) => {
+			const reason = NextResponse.json({ error }, { status: 500 });
 			reject(reason);
 		});
 
-		pdfParser.on("pdfParser_dataReady", (pdfData: Output) => {
-			const data = pdfData;
-			const value = NextResponse.json({ data: data }, { status: 201 });
-			resolve(value);
+		pdfParser.on("pdfParser_dataReady", (data: Output) => {			
+			const response = NextResponse.json({ data }, { status: 500 });
+			resolve(response)
 		});
 
 		pdfParser.parseBuffer(buffer);
-	})
-		.then((value) => {
-			return value;
-		})
-		.catch((error) => {
-			return error;
-		});
+	}).finally()
 }
