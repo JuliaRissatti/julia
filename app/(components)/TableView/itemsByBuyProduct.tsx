@@ -1,10 +1,8 @@
-import { BuyItem } from "@/app/models/buy-item";
-import { BuyProduct } from "@/app/models/buy-product";
+
+import { BuyItem } from "@/app/models/item/buy-item";
+import { BuyProduct } from "@/app/models/item/buy-product";
 
 export default function ItemsByBuyProduct(product: BuyProduct) {
-
-	console.log(product)
-
 	return (
 		<>
 			<table className="table-auto border-collapse">
@@ -51,26 +49,42 @@ export default function ItemsByBuyProduct(product: BuyProduct) {
 				<tbody className="text-center">
 					{product?.items?.map((item: BuyItem, index: number) => (
 						<tr key={index}>
-							<td hidden className="border border-slate-600 p-3">{item.pedido}</td>
-							<td hidden className="border border-slate-600 p-3">{item.item}</td>
-							<td className="border border-slate-600 p-3">{item.emissao}</td>
-							<td className="border border-slate-600 p-3">{item.entrega}</td>
-							<td hidden className="border border-slate-600 p-3">{item.cliente}</td>
-							<td hidden className="border border-slate-600 p-3">{item.eqtn}</td>
-							<td hidden className="border border-slate-600 p-3">{item.perfil}</td>
-							<td hidden className="border border-slate-600 p-3">{item.beneficiario}</td>
-							<td className="border border-slate-600 p-3">{item.liga}</td>
-							<td className="border border-slate-600 p-3">{item.tamanho}</td>
-							<td className="border border-slate-600 p-3">{item.corte}</td>
-							<td className="border border-slate-600 p-3">{item.amarracoes}</td>
-							<td className="border border-slate-600 p-3">{item.pecas}</td>
-							<td className="border border-slate-600 p-3">{item.liquido}</td>
-							<td className="border border-slate-600 p-3">{item.bruto}</td>
-							<td className="border border-slate-600 p-3">{item.solicitado}</td>
-							<td hidden className="border border-slate-600 p-3">{item.atendido}</td>
-							<td hidden className="border border-slate-600 p-3">{item.ca}</td>
-							<td className="border border-slate-600 p-3">{item.observacao}</td>
-							<td className="border border-slate-600 p-3">{item.etiqueta}</td>
+							<td hidden className="border border-slate-600 bg-slate-200 text-black p-3">
+								{item.pedido}
+							</td>
+							<td hidden className="border border-slate-600 bg-slate-200 text-black p-3">
+								{item.item}
+							</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.emissao.toDateString()}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.entrega.toDateString()}</td>
+							<td hidden className="border border-slate-600 bg-slate-200 text-black p-3">
+								{item.cliente}
+							</td>
+							<td hidden className="border border-slate-600 bg-slate-200 text-black p-3">
+								{item.eqtn}
+							</td>
+							<td hidden className="border border-slate-600 bg-slate-200 text-black p-3">
+								{item.produto}
+							</td>
+							<td hidden className="border border-slate-600 bg-slate-200 text-black p-3">
+								{item.beneficiario}
+							</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.liga}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.tamanho}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.corte}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.amarracoes}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.pecas}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.liquido}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.bruto}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.solicitado}</td>
+							<td hidden className="border border-slate-600 bg-slate-200 text-black p-3">
+								{item.atendido}
+							</td>
+							<td hidden className="border border-slate-600 bg-slate-200 text-black p-3">
+								{item.ca}
+							</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.observacao}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.etiqueta}</td>
 						</tr>
 					))}
 					<tr>
@@ -82,13 +96,13 @@ export default function ItemsByBuyProduct(product: BuyProduct) {
 						<td hidden className="border border-slate-600 p-3" />
 						<td hidden className="border border-slate-600 p-3" />
 						<td hidden className="border border-slate-600 p-3" />
-						<td />
-						<td />
-						<td />
-						<td className="border border-slate-600 p-3">{product.subtotal.amarracoes}</td>
-						<td className="border border-slate-600 p-3">{product.subtotal.pecas}</td>
-						<td className="border border-slate-600 p-3">{product.subtotal.liquido}</td>
-						<td className="border border-slate-600 p-3">{product.subtotal.bruto}</td>
+						<td colSpan={3} className="border-slate-600 p-3">
+							Sub-total
+						</td>
+						<td className="border border-slate-600 bg-slate-300 text-black p-3">{product.subtotal.amarracoes}</td>
+						<td className="border border-slate-600 bg-slate-300 text-black p-3">{product.subtotal.pecas}</td>
+						<td className="border border-slate-600 bg-slate-300 text-black p-3">{product.subtotal.liquido}</td>
+						<td className="border border-slate-600 bg-slate-300 text-black p-3">{product.subtotal.bruto}</td>
 						<td />
 						<td hidden className="border border-slate-600 p-3" />
 						<td hidden className="border border-slate-600 p-3" />

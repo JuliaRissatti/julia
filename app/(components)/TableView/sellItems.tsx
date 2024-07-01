@@ -1,17 +1,27 @@
-import { BuyItem } from "@/app/models/buy-item";
-import { BuyProduct } from "@/app/models/buy-product";
-import { SellItem } from "@/app/models/sell-item";
+import { SellItem } from "@/app/models/item/sell-item";
 
-export default function SellItems(param: { sellItems: Array<SellItem> }) {
-	const sellItems: Array<SellItem> = param.sellItems;
+export default function SellItems(param: { product?: string; items: Array<SellItem> }) {
+	let items: Array<SellItem> = new Array<SellItem>();
+
+	if (!param.product) {
+		items.push(...param.items);
+	} else {
+		const item = param.items.find((item) => param.product === item.produto);
+		if (!item) throw new Error("produto non encontrado");
+		items.push(item);
+	}
 
 	return (
 		<>
 			<table className="border-collapse border border-slate-500 table-auto">
 				<thead>
 					<tr>
-						<th hidden className="border border-slate-600">Item</th>
-						<th className="border border-slate-600">Produto</th>
+						<th hidden className="border border-slate-600">
+							Item
+						</th>
+						<th hidden className="border border-slate-600">
+							Produto
+						</th>
 						<th className="border border-slate-600">Beneficiário</th>
 						<th className="border border-slate-600">Seu Código</th>
 						<th className="border border-slate-600">Liga</th>
@@ -22,33 +32,34 @@ export default function SellItems(param: { sellItems: Array<SellItem> }) {
 						<th className="border border-slate-600">%IPI</th>
 						<th className="border border-slate-600">Valor IPI</th>
 						<th className="border border-slate-600">Valor do Item</th>
-						<th className="border border-slate-600">Sm n. Entrega</th>
+						<th hidden className="border border-slate-600">
+							Sm n.
+						</th>
+						<th className="border border-slate-600">Entrega</th>
 					</tr>
 				</thead>
 				<tbody className="text-center">
-					{sellItems?.map((item: SellItem, index: number) => (
+					{items?.map((item: SellItem, index: number) => (
 						<tr key={index}>
-							<td hidden className="border border-slate-600 p-3">{item.item}</td>
-							<td className="border border-slate-600 p-3">{item.produto}</td>
-							<td className="border border-slate-600 p-3">{item.beneficiario}</td>
-							<td className="border border-slate-600 p-3">
-								{item.seuCodigo}
+							<td hidden className="border border-slate-600 bg-slate-200 text-black p-3">
+								{item.item.toString()}
 							</td>
-							<td className="border border-slate-600 p-3">
-								{item.liga}
+							<td hidden className="border border-slate-600 bg-slate-200 text-black p-3">
+								{item.produto}
 							</td>
-							<td className="border border-slate-600 p-3">
-								{item.tamanho}
-							</td>
-							<td className="border border-slate-600 p-3">
-								{item.corte}
-							</td>
-							<td className="border border-slate-600 p-3">{item.pecas}</td>
-							<td className="border border-slate-600 p-3">{item.preco}</td>
-							<td className="border border-slate-600 p-3">{item.porcentagemIpi}</td>
-							<td className="border border-slate-600 p-3">{item.valorIpi}</td>
-							<td className="border border-slate-600 p-3">{item.valorDoItem}</td>
-							<td className="border border-slate-600 p-3">{item.smNEntrega}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.beneficiario}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.seuCodigo}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.liga.toString()}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.tamanho}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.corte.toString()}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.pecas.toString()}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.peso.toString()}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.preco.toString()}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.porcentagemIpi.toString()}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.valorIpi.toString()}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.valorDoItem.toString()}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.smn}</td>
+							<td className="border border-slate-600 bg-slate-200 text-black p-3">{item.entrega.toDateString()}</td>
 						</tr>
 					))}
 				</tbody>

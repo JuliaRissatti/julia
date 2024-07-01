@@ -1,8 +1,8 @@
 import { Line, Page } from "tesseract.js";
-import { MalformedItem } from "../Item/errors";
-import { BuyProduct, RawBuyProduct } from "@/app/models/buy-product";
+import { BuyProduct, RawBuyProduct } from "@/app/models/item/buy-product";
+import { BuyItem, RawBuyItem } from "@/app/models/item/buy-item";
 
-export default function readBuyOrder(orderNumber: string, pages: Array<Page>) {
+export default function readBuyOrder(orderId: string, pages: Array<Page>) {
 	// Concatenate all Lines from all Pages
 	const lines = pages.reduce((lines: Array<Line>, page) => lines.concat(page.lines), new Array<Line>());
 
@@ -16,93 +16,73 @@ export default function readBuyOrder(orderNumber: string, pages: Array<Page>) {
 
 	const buyOrderTable = lines.slice(buyOrderTableHeader + 1, buyOrderTableFooter);
 
-	const rawProducts = getRawProducts(buyOrderTable);
+	const buyOrderLines: Array<Array<Line>> = extractLines(buyOrderTable, orderId);
 
-	return rawProducts.map((rawItemsByProduct) => cookRawProduct(orderNumber, rawItemsByProduct));
+	const buyOrderString: Array<RawBuyProduct> = buyOrderLines.map((lines) => convertToString(lines, orderId));
+
+	const buyOrder = buyOrderString.map((rawBuyProduct) => convertToBuyOrder(rawBuyProduct));
+
+	return buyOrder;
 }
 
-function getRawProducts(lines: Array<Line>) {
-	const rawProducts = new Array<RawBuyProduct>();
+function extractLines(buyOrderTable: Array<Line>, orderId: string) {
+	const ordersLines = new Array<Array<Line>>();
 
 	let lastIndex = 0;
-	lines.forEach((line: Line, index: number) => {
+	buyOrderTable.forEach((line: Line, index: number) => {
 		if (line.text.includes("Sub-Total")) {
-			const data = lines.slice(lastIndex, index + 1);
-
-			const id = data.at(0);
-			const items = data.slice(1, -1);
-			const subtotal = data.at(-1);
-
-			if (data.length < 3 || !id || !items || !subtotal) {
-				throw new MalformedItem("Não foi possível construir o item " + index);
-			} else {
-				rawProducts.push({
-					id,
-					items,
-					subtotal,
-				});
-
-				lastIndex = index + 1;
-			}
+			const data = buyOrderTable.slice(lastIndex, index + 1);
+			ordersLines.push(data);
+			lastIndex = index + 1;
 		}
 	});
 
-	return rawProducts;
+	return ordersLines;
 }
 
-interface KnownItemValues {
-	pedido: string;
-	perfil: string;
+function convertToString(product: Array<Line>, orderId: string) {
+	if (product.length < 3) throw new Error("Não rolou nem receber as linhas do produto");
+
+	const headerLine = product.at(0);
+	const itemLines = product.slice(1, -1);
+	const subtotalLine = product.at(-1);
+
+	if (!headerLine || !itemLines || !subtotalLine) throw new Error("Não rolou montar as linhas do produto ae");
+
+	const productId = readProductId(headerLine);
+
+	const items: Array<RawBuyItem> = readItems(itemLines, orderId, productId);
+
+	const subtotal = readSubtotal(productId, subtotalLine.text);
+
+	return { orderId, productId, items, subtotal };
 }
 
-function cookRawProduct(orderNumber: string, rawProduct: RawBuyProduct) {
-	const knownValues: KnownItemValues = {
-		pedido: orderNumber,
-		perfil: rawProduct.id.text.split(" ")[0],
-	};
+function readProductId(line: Line) {
+	return line.text.split(" ")[0];
+}
 
-	const cookedItems = rawProduct.items.map((line: Line) => {
-		const [firstString, secondString] = splitLineInTwo(knownValues, line);
+function readItems(items: Array<Line>, orderId: string, productId: string): Array<RawBuyItem> {
+	return items.map((line: Line) => {
+		const [firstString, secondString] = splitLineInTwo(productId, line);
 
-		const [pedido, item, emissao, entrega, cliente, eqtn, perfil, beneficiario] = readFirstString(
-			firstString,
-			knownValues
-		);
+		const firstPart = readFirstString(firstString, orderId, productId);
+		const secondPart = readSecondString(secondString);
 
-		const [liga, tamanho, corte, amarracoes, pecas, liquido, bruto, solicitado, atendido, ca, observacao, etiqueta] =
-			readSecondString(secondString);
-
-		return {
-			pedido,
-			item,
-			emissao,
-			entrega,
-			cliente,
-			eqtn,
-			perfil,
-			beneficiario,
-			liga,
-			tamanho,
-			corte,
-			amarracoes,
-			pecas,
-			liquido,
-			bruto,
-			solicitado,
-			atendido,
-			ca,
-			observacao,
-			etiqueta,
-		};
+		return { ...firstPart, ...secondPart };
 	});
+}
 
-	const subtotal = readSubtotal(knownValues.perfil, rawProduct.subtotal.text);
+function readSubtotal(produto: string, subtotalString: string) {
+	const amarracoesRegExp = `(?<amarracoes>\\s\\d+\\s)`;
+	const pecasRegExp = `(?<pecas>\\s\\d+\\s)`;
+	const liquidoRegExp = `(?<liquido>\\b\\d+,\\d{2})`;
+	const brutoRegExp = `(?<bruto>\\b\\d+,\\d{2})`;
 
-	return {
-		id: knownValues.perfil,
-		items: cookedItems,
-		subtotal: subtotal,
-	};
+	const subtotalRegExp = new RegExp([amarracoesRegExp, pecasRegExp, liquidoRegExp, brutoRegExp].join(".*"), "g");
+	const [, amarracoes, pecas, liquido, bruto] = subtotalRegExp.exec(subtotalString) || [];
+
+	return { produto, amarracoes, pecas, liquido, bruto };
 }
 
 /*
@@ -112,15 +92,15 @@ function cookRawProduct(orderNumber: string, rawProduct: RawBuyProduct) {
  *  Pedido	 Beneficiário   Tamaho       Etiqueta
  * [ - - - - - - - - - - ] [ - - - - - - - - - - ]
  */
-function splitLineInTwo(knownValues: KnownItemValues, line: Line) {
+function splitLineInTwo(product: string, line: Line) {
 	const text = line.text;
 
-	const regexPerfil = new RegExp(`(?<perfil>` + knownValues.perfil + `)`, "g");
+	const regexPerfil = new RegExp(`(?<perfil>` + product + `)`, "g");
 	const indexPerfil = regexPerfil.exec(text)?.index;
 	if (!indexPerfil) throw new Error();
 
 	const firstBlockStart = 0;
-	const firstBlockEnd = indexPerfil + knownValues.perfil.length;
+	const firstBlockEnd = indexPerfil + product.length;
 	const firstBlock = text.substring(firstBlockStart, firstBlockEnd);
 
 	const secondBlockStart = firstBlockEnd;
@@ -142,13 +122,13 @@ function splitLineInTwo(knownValues: KnownItemValues, line: Line) {
 	6. Deduzir <EqTn> buscando dois caracteres para trás do início de perfil
 	7. Ignorar <Cliente> e <Beneficiário>
  */
-function readFirstString(text: string, knownValues: KnownItemValues) {
+function readFirstString(text: string, orderId: string, productId: string) {
 	text.replaceAll(" ", "");
 
 	if (!text) throw new Error("text");
 
 	const pedidoString = text;
-	const pedidoRegExp = new RegExp(`^(?<pedido>` + knownValues.pedido + `)`, "g");
+	const pedidoRegExp = new RegExp(`^(?<pedido>` + orderId + `)`, "g");
 	const pedidoRegExpExec = pedidoRegExp.exec(pedidoString);
 	const pedido = pedidoRegExpExec?.at(1);
 
@@ -172,18 +152,18 @@ function readFirstString(text: string, knownValues: KnownItemValues) {
 
 	if (!entrega) throw new Error("entrega");
 
-	const perfilString = text;
-	const perfilRegExp = new RegExp(`(?<perfil>` + knownValues.perfil + `)`, "g");
-	const perfilRegExpExec = perfilRegExp.exec(perfilString);
-	const perfil = perfilRegExpExec?.at(1);
+	const produtoString = text;
+	const produtoRegExp = new RegExp(`(?<produto>` + productId + `)`, "g");
+	const produtoRegExpExec = produtoRegExp.exec(produtoString);
+	const produto = produtoRegExpExec?.at(1);
 
-	if (!perfil) throw new Error("perfil");
+	if (!produto) throw new Error("perfil");
 
-	const eqtn = text.substring(perfilRegExpExec!.index - 2, perfilRegExpExec!.index);
+	const eqtn = text.substring(produtoRegExpExec!.index - 2, produtoRegExpExec!.index);
 
 	if (!eqtn) throw new Error("eqtn");
 
-	const cliente = entregaString.substring(entregaRegExp?.lastIndex, perfilRegExpExec!.index - eqtn.length);
+	const cliente = entregaString.substring(entregaRegExp?.lastIndex, produtoRegExpExec!.index - eqtn.length);
 
 	if (!cliente) throw new Error("cliente");
 
@@ -191,7 +171,7 @@ function readFirstString(text: string, knownValues: KnownItemValues) {
 
 	if (!beneficiario) throw new Error("beneficiario");
 
-	return new Array<string>(pedido, item, emissao, entrega, cliente, eqtn, perfil, beneficiario);
+	return { pedido, item, emissao, entrega, cliente, eqtn, produto, beneficiario };
 }
 
 /*
@@ -288,30 +268,48 @@ function readSecondString(text: string) {
 
 	if (!etiqueta) throw new Error("etiqueta");
 
-	return new Array<string>(
-		liga,
-		tamanho,
-		corte,
-		amarracoes,
-		pecas,
-		liquido,
-		bruto,
-		solicitado,
-		atendido,
-		ca,
-		observacao,
-		etiqueta
-	);
+	return { liga, tamanho, corte, amarracoes, pecas, liquido, bruto, solicitado, atendido, ca, observacao, etiqueta };
 }
 
-function readSubtotal(perfil: string, subtotalString: string) {
-	const amarracoesRegExp = `(?<amarracoes>\\s\\d+\\s)`
-	const pecasRegExp = `(?<pecas>\\s\\d+\\s)`
-	const liquidoRegExp = `(?<liquido>\\b\\d+,\\d{2})`
-	const brutoRegExp = `(?<bruto>\\b\\d+,\\d{2})`
+function convertToBuyOrder(rawBuyOrder: RawBuyProduct) {
+	const orderId: BuyProduct["orderId"] = Number(rawBuyOrder.orderId);
 
-	const subtotalRegExp = new RegExp([amarracoesRegExp, pecasRegExp, liquidoRegExp, brutoRegExp].join(".*"), "g")
-	const [, amarracoes, pecas, liquido, bruto] = subtotalRegExp.exec(subtotalString) || [];
+	const productId: BuyProduct["productId"] = rawBuyOrder.productId;
 
-	return { perfil, amarracoes, pecas, liquido, bruto };
+	const items: BuyProduct["items"] = rawBuyOrder.items.map((rawBuyItem) => {
+		const buyItem: BuyItem = {
+			pedido: Number(rawBuyItem.pedido),
+			item: Number(rawBuyItem.item),
+			emissao: new Date(rawBuyItem.emissao),
+			entrega: new Date(rawBuyItem.entrega),
+			cliente: rawBuyItem.cliente,
+			eqtn: rawBuyItem.eqtn,
+			produto: rawBuyItem.produto,
+			beneficiario: rawBuyItem.beneficiario,
+			liga: Number(rawBuyItem.liga),
+			tamanho: rawBuyItem.tamanho,
+			corte: Number(rawBuyItem.corte),
+			amarracoes: Number(rawBuyItem.amarracoes),
+			pecas: Number(rawBuyItem.pecas),
+			liquido: Number(rawBuyItem.liquido),
+			bruto: Number(rawBuyItem.bruto),
+			solicitado: Number(rawBuyItem.solicitado),
+			atendido: Number(rawBuyItem.atendido),
+			ca: rawBuyItem.ca,
+			observacao: rawBuyItem.observacao,
+			etiqueta: rawBuyItem.etiqueta,
+		};
+
+		return buyItem;
+	});
+
+	const subtotal: BuyProduct["subtotal"] = {
+		produto: rawBuyOrder.subtotal.produto,
+		amarracoes: Number(rawBuyOrder.subtotal.amarracoes),
+		pecas: Number(rawBuyOrder.subtotal.pecas),
+		liquido: Number(rawBuyOrder.subtotal.liquido),
+		bruto: Number(rawBuyOrder.subtotal.bruto),
+	};
+
+	return { orderId, productId, items, subtotal };
 }

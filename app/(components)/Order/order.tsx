@@ -5,12 +5,10 @@ import { useEffect, useState } from "react";
 import FileHandler from "../file-handler";
 import readBuyOrder from "../scrappers/buyOrderScrapper";
 import readSellOrder from "../scrappers/sellOrderScrapper";
-import ItemsByBuyProduct from "../TableView/itemsByBuyProduct";
 
-import { SellItem } from "@/app/models/sell-item";
-import { BuyProduct } from "@/app/models/buy-product";
+import { SellItem } from "@/app/models/item/sell-item";
 import readPNG from "@/app/Services/Tesseract/read-png";
-import ItemsBySellOrder from "../TableView/sellItems";
+import { BuyProduct } from "@/app/models/item/buy-product";
 import convertToPNG from "@/app/Services/PDF-Conversion/pdf-to-png";
 
 export default function Order({ orderNumber }: any) {
@@ -23,7 +21,7 @@ export default function Order({ orderNumber }: any) {
 	const [sellOrderPDF, setSellOrderPDF] = useState<File>();
 
 	// Produtos de compra  e venda identificados;
-	const [buyProducts, setBuyProducts] = useState<Array<BuyProduct>>();
+	const [buyOrder, setBuyOrder] = useState<Array<BuyProduct>>();
 	const [sellProducts, setSellProducts] = useState<Array<SellItem>>();
 
 	useEffect(() => {
@@ -36,51 +34,37 @@ export default function Order({ orderNumber }: any) {
 
 	async function readBuyOrderPDF(buyOrderPDF: File) {
 		const PNGs = await convertToPNG(buyOrderPDF, false);
-		// setPNGs(PNGs);
-
 		const pages = await readPNG(PNGs);
-		// setPages(pages);
-
-		const buyOrderProducts = readBuyOrder(orderNumber, pages);
-
-		setBuyProducts(buyOrderProducts);
+		const buyOrder = readBuyOrder(orderNumber, pages);
+		setBuyOrder(buyOrder);
 	}
 
 	async function readSellOrderPDF(buyOrderPDF: File) {
+		if (!buyOrder) return;
+
 		const PNGs = await convertToPNG(buyOrderPDF, true);
-		// setPNGs(PNGs);
-
 		const pages = await readPNG(PNGs);
-		// setPages(pages);
-
-		if (!buyProducts) return;
-
-		const sellOrderProducts = readSellOrder(orderNumber, buyProducts, pages);
-
+		const sellOrderProducts = readSellOrder(orderNumber, buyOrder, pages);
 		setSellProducts(sellOrderProducts);
 	}
 
 	return (
 		<>
-			<div className="m-3">
+			<div className="flex justify-evenly m-3">
 				<FileHandler label={"Pedido nº " + orderNumber} onFileUpdate={(file: File) => setBuyOrderPDF(file)} />
+				<FileHandler label={"Pedido de Venda - " + orderNumber} onFileUpdate={(file: File) => setSellOrderPDF(file)} />
 			</div>
 
-			{buyProducts?.map((product, index) => (
-				<div key={index} className="m-3">
-					<ItemsByBuyProduct id={product.id} items={product.items} subtotal={product.subtotal} />
-				</div>
+			{/*
+			{buyOrder?.map((buyProduct, index) => (
+				<>
+					<div key={index} className="m-3">
+						<ItemsByBuyProduct id={product.id} items={product.items} subtotal={product.subtotal} />
+						{sellProducts && <ItemsBySellOrder product={product.id} items={sellProducts} />}
+					</div>
+				</>
 			))}
-
-			<div className="m-3">
-				<FileHandler label={"Pedido de Venda"} onFileUpdate={(file: File) => setSellOrderPDF(file)} />
-			</div>
-
-			{sellProducts && (
-				<div className="m-3">
-					<ItemsBySellOrder sellItems={sellProducts} />
-				</div>
-			)}
+			*/}
 		</>
 	);
 }

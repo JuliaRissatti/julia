@@ -5,7 +5,7 @@ import { MalformedOrder } from "../Order/errors";
 import { useState } from "react";
 import TabPanel from "../TabPanel/tab-panel";
 
-function Client({ lines }: any) {
+export default function Client({ lines }: any) {
 	const [isCollapsed, setCollapsed] = useState(true);
 
 	const data: Array<Line> = lines;
@@ -50,5 +50,3 @@ function Client({ lines }: any) {
 		</>
 	);
 }
-
-export default Client;

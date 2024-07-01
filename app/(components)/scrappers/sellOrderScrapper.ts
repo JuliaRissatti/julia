@@ -1,6 +1,7 @@
-import { BuyProduct } from "@/app/models/buy-product";
-import { RawSellProduct, SellProduct } from "@/app/models/sell-product";
 import { Page, Line } from "tesseract.js";
+
+import { BuyProduct } from "@/app/models/item/buy-product";
+import { RawSellItem } from "@/app/models/item/sell-item";
 
 export default function readSellOrder(orderNumber: string, buyProducts: Array<BuyProduct>, pages: Array<Page>) {
 	// Concatenate all Lines from all Pages
@@ -16,30 +17,29 @@ export default function readSellOrder(orderNumber: string, buyProducts: Array<Bu
 
 	const sellOrderTable = lines.slice(sellOrderTableHeader + 2, sellOrderTableFooter);
 
-	const rawSellItems = getRawItems(buyProducts, sellOrderTable);
+	const sellOrdersLines = extractLines(buyProducts, sellOrderTable);
 
-	return rawSellItems.map((rawSellItem: RawSellProduct) => cookRawItem(rawSellItem));
+	const sellOrderString = sellOrdersLines.map((product) => convertToString(product.productId, product.lines));
+
+	const sellOrder = sellOrderString.map((product) => convertToSellOrder(product));
+
+	return sellOrder;
 }
 
-function getRawItems(buyProducts: Array<BuyProduct>, sellOrderTable: Array<Line>) {
-	const rawItems = new Array<RawSellProduct>();
+function extractLines(buyProducts: Array<BuyProduct>, sellOrderTable: Array<Line>) {
+	const productLines = new Array<{ productId: string; lines: Array<Line> }>();
 
-	const productsId = buyProducts?.map((product) => product.id);
+	const productsId = buyProducts?.map((product) => product.orderId.toString());
 
-	productsId.forEach((id: string) => {
-		const productIndex = sellOrderTable.findIndex((line) => line.text.includes(id.toString()));
+	productsId.forEach((productId: string) => {
+		const productIndex = sellOrderTable.findIndex((line) => line.text.includes(productId));
 
 		if (productIndex < 0) throw new Error("virrshhh");
 
-		rawItems.push({ id: id, items: sellOrderTable.splice(productIndex, 2) });
+		productLines.push({ productId, lines: sellOrderTable.splice(productIndex, 2) });
 	});
 
-	return rawItems;
-}
-
-interface KnownItemValues {
-	pedido: string;
-	perfil: string;
+	return productLines;
 }
 
 /*
@@ -51,14 +51,13 @@ interface KnownItemValues {
 	6. isso
 	7. aki
  */
-function cookRawItem(rawSellItem: RawSellProduct) {
-	const id = rawSellItem.id;
-	const text = rawSellItem.items.at(0)?.text;
+function convertToString(product: string, productLines: Array<Line>) {
+	const text = productLines.at(0)?.text;
 
 	if (!text) throw new Error("text");
 
 	const produtoString = text;
-	const produtoRegExp = new RegExp(`(?<produto>\\b` + id + `\\b)`, "g");
+	const produtoRegExp = new RegExp(`(?<produto>\\b` + product + `\\b)`, "g");
 	const produtoRegExpExec = produtoRegExp.exec(produtoString);
 	const produto = produtoRegExpExec?.at(1);
 
@@ -136,12 +135,17 @@ function cookRawItem(rawSellItem: RawSellProduct) {
 
 	if (!valorDoItem) throw new Error("valorDoItem");
 
-	const smNEntregaString = valorDoItemString.substring(valorDoItemRegExp.lastIndex, undefined);
-	const smNEntregaRegExp = new RegExp(`(?<smNEntrega>\\d{2}\\/\\d{2}\\/\\d{4})`, "g");
-	const smNEntregaRegExpExec = smNEntregaRegExp.exec(smNEntregaString);
-	const smNEntrega = smNEntregaRegExpExec?.at(1);
+	const smnString = valorDoItemString.substring(valorDoItemRegExp.lastIndex, undefined);
+	const smn = " ";
 
-	if (!smNEntrega) throw new Error("smNEntrega");
+	if (!smn) throw new Error("smn");
+
+	const entregaString = valorDoItemString.substring(valorDoItemRegExp.lastIndex, undefined);
+	const entregaRegExp = new RegExp(`(?<entrega>\\d{2}\\/\\d{2}\\/\\d{4})`, "g");
+	const entregaRegExpExec = entregaRegExp.exec(entregaString);
+	const entrega = entregaRegExpExec?.at(1);
+
+	if (!entrega) throw new Error("entrega");
 
 	const seuCodigoString = ligaStringSplit.join();
 	const seuCodigo = seuCodigoString;
@@ -162,6 +166,43 @@ function cookRawItem(rawSellItem: RawSellProduct) {
 		porcentagemIpi,
 		valorIpi,
 		valorDoItem,
-		smNEntrega,
+		smn,
+		entrega,
+	};
+}
+
+function convertToSellOrder(rawSellItem: RawSellItem) {
+	const item = Number(rawSellItem.item);
+	const produto = rawSellItem.produto;
+	const beneficiario = rawSellItem.beneficiario;
+	const seuCodigo = rawSellItem.seuCodigo;
+	const liga = Number(rawSellItem.liga);
+	const tamanho = rawSellItem.tamanho;
+	const corte = Number(rawSellItem.corte);
+	const pecas = Number(rawSellItem.pecas);
+	const peso = Number(rawSellItem.peso);
+	const preco = Number(rawSellItem.preco);
+	const porcentagemIpi = Number(rawSellItem.porcentagemIpi);
+	const valorIpi = Number(rawSellItem.valorIpi);
+	const valorDoItem = Number(rawSellItem.valorDoItem);
+	const smn = rawSellItem.smn;
+	const entrega = new Date(rawSellItem.entrega);
+
+	return {
+		item,
+		produto,
+		beneficiario,
+		seuCodigo,
+		liga,
+		tamanho,
+		corte,
+		pecas,
+		peso,
+		preco,
+		porcentagemIpi,
+		valorIpi,
+		valorDoItem,
+		smn,
+		entrega,
 	};
 }
