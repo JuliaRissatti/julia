@@ -1,9 +1,9 @@
 import { Page, Line } from "tesseract.js";
 
 import { BuyProduct } from "@/app/models/item/buy-product";
-import { RawSellItem } from "@/app/models/item/sell-item";
+import { RawSellProduct } from "@/app/models/item/sell-product";
 
-export default function readSellOrder(orderNumber: string, buyProducts: Array<BuyProduct>, pages: Array<Page>) {
+export default function readSellOrder(orderId: string, buyProducts: Array<BuyProduct>, pages: Array<Page>) {
 	// Concatenate all Lines from all Pages
 	const lines = pages.reduce((lines: Array<Line>, page) => lines.concat(page.lines), new Array<Line>());
 
@@ -21,15 +21,15 @@ export default function readSellOrder(orderNumber: string, buyProducts: Array<Bu
 
 	const sellOrderString = sellOrdersLines.map((product) => convertToString(product.productId, product.lines));
 
-	const sellOrder = sellOrderString.map((product) => convertToSellOrder(product));
+	const sellOrders = sellOrderString.map((product) => convertToSellOrder(product));
 
-	return sellOrder;
+	return { orderId, items: sellOrders };
 }
 
 function extractLines(buyProducts: Array<BuyProduct>, sellOrderTable: Array<Line>) {
 	const productLines = new Array<{ productId: string; lines: Array<Line> }>();
 
-	const productsId = buyProducts?.map((product) => product.orderId.toString());
+	const productsId = buyProducts?.map((product) => product.productId.toString());
 
 	productsId.forEach((productId: string) => {
 		const productIndex = sellOrderTable.findIndex((line) => line.text.includes(productId));
@@ -171,22 +171,22 @@ function convertToString(product: string, productLines: Array<Line>) {
 	};
 }
 
-function convertToSellOrder(rawSellItem: RawSellItem) {
-	const item = Number(rawSellItem.item);
-	const produto = rawSellItem.produto;
-	const beneficiario = rawSellItem.beneficiario;
-	const seuCodigo = rawSellItem.seuCodigo;
-	const liga = Number(rawSellItem.liga);
-	const tamanho = rawSellItem.tamanho;
-	const corte = Number(rawSellItem.corte);
-	const pecas = Number(rawSellItem.pecas);
-	const peso = Number(rawSellItem.peso);
-	const preco = Number(rawSellItem.preco);
-	const porcentagemIpi = Number(rawSellItem.porcentagemIpi);
-	const valorIpi = Number(rawSellItem.valorIpi);
-	const valorDoItem = Number(rawSellItem.valorDoItem);
-	const smn = rawSellItem.smn;
-	const entrega = new Date(rawSellItem.entrega);
+function convertToSellOrder(rawSellProduct: RawSellProduct) {
+	const item = parseInt(rawSellProduct.item);
+	const produto = rawSellProduct.produto;
+	const beneficiario = rawSellProduct.beneficiario;
+	const seuCodigo = rawSellProduct.seuCodigo;
+	const liga = parseInt(rawSellProduct.liga);
+	const tamanho = rawSellProduct.tamanho;
+	const corte = parseInt(rawSellProduct.corte);
+	const pecas = parseInt(rawSellProduct.pecas);
+	const peso = parseInt(rawSellProduct.peso);
+	const preco = parseFloat(rawSellProduct.preco);
+	const porcentagemIpi = parseInt(rawSellProduct.porcentagemIpi);
+	const valorIpi = parseFloat(rawSellProduct.valorIpi);
+	const valorDoItem = parseFloat(rawSellProduct.valorDoItem);
+	const smn = rawSellProduct.smn;
+	const entrega = new Date(rawSellProduct.entrega);
 
 	return {
 		item,

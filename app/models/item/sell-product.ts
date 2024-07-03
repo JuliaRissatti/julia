@@ -1,4 +1,4 @@
-export interface SellItem {
+export interface SellProduct {
 	item: number;
 	produto: string;
 	beneficiario: string;
@@ -16,7 +16,7 @@ export interface SellItem {
 	entrega: Date;
 }
 
-export interface RawSellItem {
+export interface RawSellProduct {
 	item: string;
 	produto: string;
 	beneficiario: string;

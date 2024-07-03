@@ -20,7 +20,7 @@ export default function readBuyOrder(orderId: string, pages: Array<Page>) {
 
 	const buyOrderString: Array<RawBuyProduct> = buyOrderLines.map((lines) => convertToString(lines, orderId));
 
-	const buyOrder = buyOrderString.map((rawBuyProduct) => convertToBuyOrder(rawBuyProduct));
+	const buyOrder: Array<BuyProduct> = buyOrderString.map((rawBuyProduct) => convertToBuyOrder(rawBuyProduct));
 
 	return buyOrder;
 }
@@ -278,23 +278,23 @@ function convertToBuyOrder(rawBuyOrder: RawBuyProduct) {
 
 	const items: BuyProduct["items"] = rawBuyOrder.items.map((rawBuyItem) => {
 		const buyItem: BuyItem = {
-			pedido: Number(rawBuyItem.pedido),
-			item: Number(rawBuyItem.item),
+			pedido: parseInt(rawBuyItem.pedido),
+			item: parseInt(rawBuyItem.item),
 			emissao: new Date(rawBuyItem.emissao),
 			entrega: new Date(rawBuyItem.entrega),
 			cliente: rawBuyItem.cliente,
 			eqtn: rawBuyItem.eqtn,
 			produto: rawBuyItem.produto,
 			beneficiario: rawBuyItem.beneficiario,
-			liga: Number(rawBuyItem.liga),
+			liga: parseInt(rawBuyItem.liga),
 			tamanho: rawBuyItem.tamanho,
-			corte: Number(rawBuyItem.corte),
-			amarracoes: Number(rawBuyItem.amarracoes),
-			pecas: Number(rawBuyItem.pecas),
-			liquido: Number(rawBuyItem.liquido),
-			bruto: Number(rawBuyItem.bruto),
-			solicitado: Number(rawBuyItem.solicitado),
-			atendido: Number(rawBuyItem.atendido),
+			corte: parseInt(rawBuyItem.corte),
+			amarracoes: parseInt(rawBuyItem.amarracoes),
+			pecas: parseInt(rawBuyItem.pecas),
+			liquido: parseFloat(rawBuyItem.liquido),
+			bruto: parseFloat(rawBuyItem.bruto),
+			solicitado: parseInt(rawBuyItem.solicitado),
+			atendido: parseInt(rawBuyItem.atendido),
 			ca: rawBuyItem.ca,
 			observacao: rawBuyItem.observacao,
 			etiqueta: rawBuyItem.etiqueta,
@@ -305,10 +305,10 @@ function convertToBuyOrder(rawBuyOrder: RawBuyProduct) {
 
 	const subtotal: BuyProduct["subtotal"] = {
 		produto: rawBuyOrder.subtotal.produto,
-		amarracoes: Number(rawBuyOrder.subtotal.amarracoes),
-		pecas: Number(rawBuyOrder.subtotal.pecas),
-		liquido: Number(rawBuyOrder.subtotal.liquido),
-		bruto: Number(rawBuyOrder.subtotal.bruto),
+		amarracoes: parseInt(rawBuyOrder.subtotal.amarracoes),
+		pecas: parseInt(rawBuyOrder.subtotal.pecas),
+		liquido: parseFloat(rawBuyOrder.subtotal.liquido),
+		bruto: parseFloat(rawBuyOrder.subtotal.bruto),
 	};
 
 	return { orderId, productId, items, subtotal };

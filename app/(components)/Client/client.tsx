@@ -1,6 +1,6 @@
 import { MalformedClient } from "./errors";
 import { Line } from "tesseract.js";
-import Order from "../Order/order";
+import Order from "../Order/client-order";
 import { MalformedOrder } from "../Order/errors";
 import { useState } from "react";
 import TabPanel from "../TabPanel/tab-panel";
@@ -40,8 +40,8 @@ export default function Client({ lines }: any) {
 
 	return (
 		<>
-			<div className="rounded-lg">
-				<div className="hover:bg-[#9697a0] cursor-pointer rounded-t-lg" onClick={() => setCollapsed(!isCollapsed)}>
+			<div className="bg-azure">
+				<div className="hover:bg-[#9697a0] cursor-pointer" onClick={() => setCollapsed(!isCollapsed)}>
 					<h1 className="text-lg font-semibold align-middle text-center">{name}</h1>
 				</div>
 

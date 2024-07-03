@@ -1,7 +1,7 @@
-import { SellItem } from "@/app/models/item/sell-item";
+import { SellProduct } from "@/app/models/item/sell-product";
 
-export default function SellItems(param: { product?: string; items: Array<SellItem> }) {
-	let items: Array<SellItem> = new Array<SellItem>();
+export default function SellProducts(param: { product?: string; items: Array<SellProduct> }) {
+	let items: Array<SellProduct> = new Array<SellProduct>();
 
 	if (!param.product) {
 		items.push(...param.items);
@@ -39,7 +39,7 @@ export default function SellItems(param: { product?: string; items: Array<SellIt
 					</tr>
 				</thead>
 				<tbody className="text-center">
-					{items?.map((item: SellItem, index: number) => (
+					{items?.map((item: SellProduct, index: number) => (
 						<tr key={index}>
 							<td hidden className="border border-slate-600 bg-slate-200 text-black p-3">
 								{item.item.toString()}

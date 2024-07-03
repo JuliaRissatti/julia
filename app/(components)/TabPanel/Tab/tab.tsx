@@ -15,14 +15,12 @@ function Tab({
 
 	return (
 		<>
-			<div className="">
-				<button
-					className={defaultStyle + " " + (activeTab === number ? activeStyle : unactiveStyle)}
-					onClick={() => setActive(number)}
-				>
-					<h1>Pedido nº {title}</h1>
-				</button>
-			</div>
+			<button
+				className={defaultStyle + " " + (activeTab === number ? activeStyle : unactiveStyle)}
+				onClick={() => setActive(number)}
+			>
+				<h1>Pedido nº {title}</h1>
+			</button>
 		</>
 	);
 }

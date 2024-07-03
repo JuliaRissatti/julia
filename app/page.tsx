@@ -42,21 +42,19 @@ function Home() {
 
 	return (
 		<>
-			<div className="flex flex-col items-center justify-center absolute bg-rich-black h-full w-full">
+			<div className="grid grid-cols-1 grid-rows-auto grid-flow-row bg-rich-black h-screen items-center">
+				<div className={`transition-all ${PDF ? "h-min" : "h-max"} duration-300`}>
+					<div className="grid grid-rows-1 grid-flow-col justify-center items-center gap-3">
+						<p className="font-semibold">Conferência de faturamento</p>
+						<FileHandler label="Faturamento" onFileUpdate={onFileUpdate} />
+					</div>
+				</div>
+
 				<div id="canvas" hidden />
 
-				<div className={`transition-all	${PDF ? "shrink" : "grow"} duration-300 flex flex-col justify-center`}>
-					<p className="font-semibold">Conferência de faturamento</p>
-					<FileHandler label="Faturamento" onFileUpdate={onFileUpdate} />
-				</div>
-
-				<div className={`transition-all	${PDF ? "grow" : "shrink"} duration-300  w-full`}>
-					{ordersByClient?.map((lines: Array<Line>, index: Key) => (
-						<div key={index} className="m-1">
-							<Client lines={lines} />
-						</div>
-					))}
-				</div>
+				{ordersByClient?.map((lines: Array<Line>, index: Key) => (
+					<Client key={index} lines={lines} />
+				))}
 			</div>
 		</>
 	);

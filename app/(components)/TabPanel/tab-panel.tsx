@@ -8,18 +8,14 @@ function TabPanel({ tabs, contents }: { tabs: any[]; contents: any[] }) {
 
 	return (
 		<>
-			<div className="m-2 bg-azure rounded-md">
-				<div className="flex bg-lapis-lazulli rounded-t-md pt-2 pl-2">
-					{tabs?.map((title: string, index: number) => (
-						<Tab key={index} number={index} title={title} activeTab={activeTab} setActive={setActiveTab} />
-					))}
+			{tabs?.map((title: string, index: number) => (
+				<Tab key={index} number={index} title={title} activeTab={activeTab} setActive={setActiveTab} />
+			))}
+			{contents?.map((content: string, index: number) => (
+				<div key={index} hidden={index !== activeTab}>
+					{content}
 				</div>
-				{contents?.map((content: string, index: number) => (
-					<div key={index} hidden={index !== activeTab} className="">
-						{content}
-					</div>
-				))}
-			</div>
+			))}
 		</>
 	);
 }
