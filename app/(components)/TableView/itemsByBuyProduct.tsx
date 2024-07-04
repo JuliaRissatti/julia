@@ -1,8 +1,7 @@
+import { BuyProduct } from "@/app/models/item/buy-order";
+import { BuyOrder } from "@/app/models/item/buy-product";
 
-import { BuyItem } from "@/app/models/item/buy-item";
-import { BuyProduct } from "@/app/models/item/buy-product";
-
-export default function ItemsByBuyProduct(product: BuyProduct) {
+export default function ItemsByBuyOrder(product: BuyOrder) {
 	return (
 		<>
 			<table className="table-auto border-collapse">
@@ -47,7 +46,7 @@ export default function ItemsByBuyProduct(product: BuyProduct) {
 					</tr>
 				</thead>
 				<tbody className="text-center">
-					{product?.items?.map((item: BuyItem, index: number) => (
+					{product?.items?.map((item: BuyProduct, index: number) => (
 						<tr key={index}>
 							<td hidden className="border border-slate-600 bg-slate-200 text-black p-3">
 								{item.pedido}

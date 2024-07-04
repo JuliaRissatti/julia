@@ -1,9 +1,8 @@
 import { Page, Line } from "tesseract.js";
 
-import { BuyProduct } from "@/app/models/item/buy-product";
 import { RawSellProduct } from "@/app/models/item/sell-product";
 
-export default function readSellOrder(orderId: string, buyProducts: Array<BuyProduct>, pages: Array<Page>) {
+export default function readSellOrder(orderNumber: number, pages: Array<Page>) {
 	// Concatenate all Lines from all Pages
 	const lines = pages.reduce((lines: Array<Line>, page) => lines.concat(page.lines), new Array<Line>());
 
@@ -17,29 +16,34 @@ export default function readSellOrder(orderId: string, buyProducts: Array<BuyPro
 
 	const sellOrderTable = lines.slice(sellOrderTableHeader + 2, sellOrderTableFooter);
 
-	const sellOrdersLines = extractLines(buyProducts, sellOrderTable);
+	const sellOrdersLines = extractSellOrdersLines(sellOrderTable);
 
-	const sellOrderString = sellOrdersLines.map((product) => convertToString(product.productId, product.lines));
+	const sellOrderString = sellOrdersLines.map((product) => convertToString(product));
 
-	const sellOrders = sellOrderString.map((product) => convertToSellOrder(product));
+	const sellOrder = sellOrderString.map((product) => convertToSellOrder(product));
 
-	return { orderId, items: sellOrders };
+	return {orderNumber, items: sellOrder};
 }
 
-function extractLines(buyProducts: Array<BuyProduct>, sellOrderTable: Array<Line>) {
-	const productLines = new Array<{ productId: string; lines: Array<Line> }>();
+function extractSellOrdersLines(sellOrderTable: Array<Line>) {
+	const orderLines = new Array<Array<Line>>();
 
-	const productsId = buyProducts?.map((product) => product.productId.toString());
+	let index = 0;
+	sellOrderTable.forEach((line) => {
+		const itemRegExp = new RegExp(`^(?<item>\\d+\\b)`, "g");
+		const itemRegExpExec = itemRegExp.exec(line.text);
+		const itemString = itemRegExpExec?.at(1);
+		const item = Number(itemString);
 
-	productsId.forEach((productId: string) => {
-		const productIndex = sellOrderTable.findIndex((line) => line.text.includes(productId));
-
-		if (productIndex < 0) throw new Error("virrshhh");
-
-		productLines.push({ productId, lines: sellOrderTable.splice(productIndex, 2) });
+		if (item === index) {
+			index = index + 1;
+			orderLines.push(new Array<Line>(line));
+		} else {
+			orderLines.at(index - 1)?.push(line);
+		}
 	});
 
-	return productLines;
+	return orderLines;
 }
 
 /*
@@ -51,22 +55,24 @@ function extractLines(buyProducts: Array<BuyProduct>, sellOrderTable: Array<Line
 	6. isso
 	7. aki
  */
-function convertToString(product: string, productLines: Array<Line>) {
+function convertToString(productLines: Array<Line>) {
 	const text = productLines.at(0)?.text;
 
 	if (!text) throw new Error("text");
 
-	const produtoString = text;
-	const produtoRegExp = new RegExp(`(?<produto>\\b` + product + `\\b)`, "g");
+	const itemString = text;
+	const itemRegExp = new RegExp(`^(?<produto>\\d+\\b)`, "g");
+	const itemRegExpExec = itemRegExp.exec(itemString);
+	const item = itemRegExpExec?.at(1);
+
+	if (!item) throw new Error("produto");
+
+	const produtoString = itemString.substring(itemRegExp.lastIndex, undefined);
+	const produtoRegExp = new RegExp(`(?<produto>\\b\\w+\\b)`, "g");
 	const produtoRegExpExec = produtoRegExp.exec(produtoString);
 	const produto = produtoRegExpExec?.at(1);
 
 	if (!produto) throw new Error("produto");
-
-	const itemString = text.substring(0, produtoRegExpExec?.index);
-	const item = itemString.trim();
-
-	if (!item) throw new Error("item");
 
 	const beneficiarioString = produtoString.substring(produtoRegExp.lastIndex, undefined);
 	const beneficiarioRegExp = new RegExp(`(?<beneficiario>\\b\\w+\\b)`, "g");

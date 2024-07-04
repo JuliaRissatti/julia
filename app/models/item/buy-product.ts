@@ -1,15 +1,15 @@
-import { BuyItem, BuyItemSubtotal, RawBuyItem, RawBuyItemSubtotal } from "./buy-item";
+import { BuyProduct, BuyProductSubtotal, RawBuyProduct, RawBuyProductSubtotal } from "./buy-order";
 
-export interface BuyProduct {
+export interface BuyOrder {
 	orderId: number;
 	productId: string;
-	items: Array<BuyItem>;
-	subtotal: BuyItemSubtotal;
+	items: Array<BuyProduct>;
+	subtotal: BuyProductSubtotal;
 }
 
-export interface RawBuyProduct {
+export interface RawBuyOrder {
 	orderId: string;
 	productId: string;
-	items: Array<RawBuyItem>;
-	subtotal: RawBuyItemSubtotal;
+	items: Array<RawBuyProduct>;
+	subtotal: RawBuyProductSubtotal;
 }

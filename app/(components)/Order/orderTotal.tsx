@@ -2,10 +2,10 @@
 
 import { useState } from "react";
 
-import { BuyProduct } from "@/app/models/item/buy-product";
+import { BuyOrder } from "@/app/models/item/buy-product";
 import { SellProduct } from "@/app/models/item/sell-product";
 
-export default function OrderTotal(param: { buyProduct: BuyProduct; sellOrder: SellProduct }) {
+export default function OrderTotal(param: { buyProduct: BuyOrder; sellOrder: SellProduct }) {
 	const [isCollapsed, setCollapsed] = useState(false);
 
 	const buyProduct = param.buyProduct;

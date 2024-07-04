@@ -9,7 +9,7 @@ import readSellOrder from "../scrappers/sellOrderScrapper";
 
 import readPNG from "@/app/Services/Tesseract/read-png";
 import { SellOrder } from "@/app/models/item/sell-order";
-import { BuyProduct } from "@/app/models/item/buy-product";
+import { BuyOrder } from "@/app/models/item/buy-product";
 import convertToPNG from "@/app/Services/PDF-Conversion/pdf-to-png";
 
 export default function ClientOrder({ orderNumber }: any) {
@@ -22,7 +22,7 @@ export default function ClientOrder({ orderNumber }: any) {
 	const [sellOrderPDF, setSellOrderPDF] = useState<File>();
 
 	// Produtos de compra  e venda identificados;
-	const [buyOrder, setBuyOrder] = useState<Array<BuyProduct>>();
+	const [buyOrder, setBuyOrder] = useState<Array<BuyOrder>>();
 	const [sellOrder, setSellOrder] = useState<SellOrder>();
 
 	useEffect(() => {
@@ -58,8 +58,11 @@ export default function ClientOrder({ orderNumber }: any) {
 
 	return (
 		<>
-			<div className="flex justify-evenly m-3">
+			<div>
 				<FileHandler label={"Pedido nº " + orderNumber} onFileUpdate={(file: File) => setBuyOrderPDF(file)} />
+			</div>
+
+			<div>
 				<FileHandler label={"Pedido de Venda - " + orderNumber} onFileUpdate={(file: File) => setSellOrderPDF(file)} />
 			</div>
 

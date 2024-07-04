@@ -1,7 +1,7 @@
 import { useRef } from "react";
 import Image from "next/image";
 
-function FileHandler({ label, onFileUpdate }: any) {
+export default function FileHandler({ label, status, onFileUpdate }: any) {
 	const inputRef = useRef<HTMLInputElement>(null);
 
 	const handleChange = (event: any) => onFileUpdate(event.target.files[0]);
@@ -34,8 +34,15 @@ function FileHandler({ label, onFileUpdate }: any) {
 						<div className="relative size-14">
 							<Image className="object-contain" fill src="https://www.svgrepo.com/show/66745/pdf.svg" alt="" />
 						</div>
-						<div className="flex items-center">
-							<p className="align-middle">{label}</p>
+						<div>
+							<div>
+								<p className="align-middle">{label}</p>
+							</div>
+							{status && (
+								<div>
+									<p className="align-middle">{status}</p>
+								</div>
+							)}
 						</div>
 					</div>{" "}
 				</div>
@@ -44,5 +51,3 @@ function FileHandler({ label, onFileUpdate }: any) {
 		</>
 	);
 }
-
-export default FileHandler;

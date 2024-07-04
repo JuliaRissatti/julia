@@ -1,6 +1,6 @@
 import { Line, Page } from "tesseract.js";
-import { BuyProduct, RawBuyProduct } from "@/app/models/item/buy-product";
-import { BuyItem, RawBuyItem } from "@/app/models/item/buy-item";
+import { BuyOrder, RawBuyOrder } from "@/app/models/item/buy-product";
+import { BuyProduct, RawBuyProduct } from "@/app/models/item/buy-order";
 
 export default function readBuyOrder(orderId: string, pages: Array<Page>) {
 	// Concatenate all Lines from all Pages
@@ -16,16 +16,16 @@ export default function readBuyOrder(orderId: string, pages: Array<Page>) {
 
 	const buyOrderTable = lines.slice(buyOrderTableHeader + 1, buyOrderTableFooter);
 
-	const buyOrderLines: Array<Array<Line>> = extractLines(buyOrderTable, orderId);
+	const buyOrderLines: Array<Array<Line>> = extractBuyOrderLines(buyOrderTable);
 
-	const buyOrderString: Array<RawBuyProduct> = buyOrderLines.map((lines) => convertToString(lines, orderId));
+	const buyOrderString: Array<RawBuyOrder> = buyOrderLines.map((lines) => convertToString(lines, orderId));
 
-	const buyOrder: Array<BuyProduct> = buyOrderString.map((rawBuyProduct) => convertToBuyOrder(rawBuyProduct));
+	const buyOrder: Array<BuyOrder> = buyOrderString.map((rawBuyOrder) => convertToBuyOrder(rawBuyOrder));
 
 	return buyOrder;
 }
 
-function extractLines(buyOrderTable: Array<Line>, orderId: string) {
+function extractBuyOrderLines(buyOrderTable: Array<Line>) {
 	const ordersLines = new Array<Array<Line>>();
 
 	let lastIndex = 0;
@@ -49,20 +49,20 @@ function convertToString(product: Array<Line>, orderId: string) {
 
 	if (!headerLine || !itemLines || !subtotalLine) throw new Error("Não rolou montar as linhas do produto ae");
 
-	const productId = readProductId(headerLine);
+	const productId = readHeader(headerLine);
 
-	const items: Array<RawBuyItem> = readItems(itemLines, orderId, productId);
+	const items: Array<RawBuyProduct> = readItems(itemLines, orderId, productId);
 
 	const subtotal = readSubtotal(productId, subtotalLine.text);
 
 	return { orderId, productId, items, subtotal };
 }
 
-function readProductId(line: Line) {
+function readHeader(line: Line) {
 	return line.text.split(" ")[0];
 }
 
-function readItems(items: Array<Line>, orderId: string, productId: string): Array<RawBuyItem> {
+function readItems(items: Array<Line>, orderId: string, productId: string): Array<RawBuyProduct> {
 	return items.map((line: Line) => {
 		const [firstString, secondString] = splitLineInTwo(productId, line);
 
@@ -271,39 +271,39 @@ function readSecondString(text: string) {
 	return { liga, tamanho, corte, amarracoes, pecas, liquido, bruto, solicitado, atendido, ca, observacao, etiqueta };
 }
 
-function convertToBuyOrder(rawBuyOrder: RawBuyProduct) {
-	const orderId: BuyProduct["orderId"] = Number(rawBuyOrder.orderId);
+function convertToBuyOrder(rawBuyOrder: RawBuyOrder) {
+	const orderId: BuyOrder["orderId"] = Number(rawBuyOrder.orderId);
 
-	const productId: BuyProduct["productId"] = rawBuyOrder.productId;
+	const productId: BuyOrder["productId"] = rawBuyOrder.productId;
 
-	const items: BuyProduct["items"] = rawBuyOrder.items.map((rawBuyItem) => {
-		const buyItem: BuyItem = {
-			pedido: parseInt(rawBuyItem.pedido),
-			item: parseInt(rawBuyItem.item),
-			emissao: new Date(rawBuyItem.emissao),
-			entrega: new Date(rawBuyItem.entrega),
-			cliente: rawBuyItem.cliente,
-			eqtn: rawBuyItem.eqtn,
-			produto: rawBuyItem.produto,
-			beneficiario: rawBuyItem.beneficiario,
-			liga: parseInt(rawBuyItem.liga),
-			tamanho: rawBuyItem.tamanho,
-			corte: parseInt(rawBuyItem.corte),
-			amarracoes: parseInt(rawBuyItem.amarracoes),
-			pecas: parseInt(rawBuyItem.pecas),
-			liquido: parseFloat(rawBuyItem.liquido),
-			bruto: parseFloat(rawBuyItem.bruto),
-			solicitado: parseInt(rawBuyItem.solicitado),
-			atendido: parseInt(rawBuyItem.atendido),
-			ca: rawBuyItem.ca,
-			observacao: rawBuyItem.observacao,
-			etiqueta: rawBuyItem.etiqueta,
+	const items: BuyOrder["items"] = rawBuyOrder.items.map((rawBuyProduct) => {
+		const buyItem: BuyProduct = {
+			pedido: parseInt(rawBuyProduct.pedido),
+			item: parseInt(rawBuyProduct.item),
+			emissao: new Date(rawBuyProduct.emissao),
+			entrega: new Date(rawBuyProduct.entrega),
+			cliente: rawBuyProduct.cliente,
+			eqtn: rawBuyProduct.eqtn,
+			produto: rawBuyProduct.produto,
+			beneficiario: rawBuyProduct.beneficiario,
+			liga: parseInt(rawBuyProduct.liga),
+			tamanho: rawBuyProduct.tamanho,
+			corte: parseInt(rawBuyProduct.corte),
+			amarracoes: parseInt(rawBuyProduct.amarracoes),
+			pecas: parseInt(rawBuyProduct.pecas),
+			liquido: parseFloat(rawBuyProduct.liquido),
+			bruto: parseFloat(rawBuyProduct.bruto),
+			solicitado: parseInt(rawBuyProduct.solicitado),
+			atendido: parseInt(rawBuyProduct.atendido),
+			ca: rawBuyProduct.ca,
+			observacao: rawBuyProduct.observacao,
+			etiqueta: rawBuyProduct.etiqueta,
 		};
 
 		return buyItem;
 	});
 
-	const subtotal: BuyProduct["subtotal"] = {
+	const subtotal: BuyOrder["subtotal"] = {
 		produto: rawBuyOrder.subtotal.produto,
 		amarracoes: parseInt(rawBuyOrder.subtotal.amarracoes),
 		pecas: parseInt(rawBuyOrder.subtotal.pecas),

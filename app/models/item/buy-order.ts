@@ -1,11 +1,9 @@
-export interface BuyItem {
-	pedido: number;
-	item: number;
+import { Order } from "../order/order";
+
+export interface BuyProduct extends Order {
 	emissao: Date;
 	entrega: Date;
-	cliente: string;
 	eqtn: string;
-	produto: string;
 	beneficiario: string;
 	liga: number;
 	tamanho: string;
@@ -21,7 +19,7 @@ export interface BuyItem {
 	etiqueta: string;
 }
 
-export interface BuyItemSubtotal {
+export interface BuyProductSubtotal {
 	produto: string;
 	amarracoes: number;
 	pecas: number;
@@ -29,7 +27,7 @@ export interface BuyItemSubtotal {
 	bruto: number;
 }
 
-export interface RawBuyItem {
+export interface RawBuyProduct {
 	pedido: string;
 	item: string;
 	emissao: string;
@@ -52,7 +50,7 @@ export interface RawBuyItem {
 	etiqueta: string;
 }
 
-export interface RawBuyItemSubtotal {
+export interface RawBuyProductSubtotal {
 	produto: string;
 	amarracoes: string;
 	pecas: string;
