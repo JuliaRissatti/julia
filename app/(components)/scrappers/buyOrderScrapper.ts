@@ -7,10 +7,10 @@ export default function readBuyOrder(pages: Array<Page>): Array<BuyOrder> {
 	// Concatenate all Lines from all Pages
 	const lines = pages.reduce((lines: Array<Line>, page) => lines.concat(page.lines), new Array<Line>());
 
-	const headerLines = lines.slice(0, 3)
+	const headerLines = lines.slice(0, 3);
 	const header = extractHeader(headerLines);
 
-	const buyOrderLines = lines.slice(3, undefined)
+	const buyOrderLines = lines.slice(3, undefined);
 	const buyOrders = extractBuyOrders(buyOrderLines, header.order);
 
 	return buyOrders;
@@ -58,13 +58,15 @@ function extractBuyOrders(lines: Array<Line>, order: string) {
 		const lastBuyOrder = buyOrders?.at(-1);
 
 		if (itemRegExp.test(text)) {
-			const order = interpretItem(text);
-			buyOrders.push(order);
+			const buyOrder = interpretItem(text, order);
+			buyOrders.push(buyOrder);
 		} else if (subitemRegExp.test(text)) {
-			const item = interpretSubitem(text, order);
+			if (!lastBuyOrder) throw new Error("Tentando criar Subitem sem ter um Item");
+			const item = interpretSubitem(text, lastBuyOrder);
 			lastBuyOrder!.items.push(item);
 		} else if (subtotalRegExp.test(text)) {
-			const subtotal = interpretSubtotal(text);
+			if (!lastBuyOrder) throw new Error("Tentando criar Subtotal sem ter um Item");
+			const subtotal = interpretSubtotal(text, lastBuyOrder);
 			lastBuyOrder!.subtotal = subtotal;
 		} else {
 			// ignore
@@ -74,101 +76,25 @@ function extractBuyOrders(lines: Array<Line>, order: string) {
 	return buyOrders;
 }
 
-function interpretItem(text: string): BuyOrder {
-	const orderRegExp = new RegExp(`^(?<item>)\\w+\\-\\d+`, `g`);
-	const orderRegExpExec = orderRegExp.exec(text);
-	const order = orderRegExpExec?.at(1);
+function interpretItem(text: string, order: string): BuyOrder {
+	const itemRegExp = new RegExp(`^(?<item>\\w+\\-\\d+)`, `g`);
+	const itemRegExpExec = itemRegExp.exec(text);
+	const item = itemRegExpExec?.at(1);
 
-	if (!order) throw new Error("Cant sry");
-	// Podemos, se necessário, interpretar a transportadora e o beneficiador
+	if (!item) throw new Error("Item");
 
-	const item: BuyOrder = { order, items: new Array<BuyProduct>(), subtotal: undefined };
+	const buyOrder: BuyOrder = { order, item, items: new Array<BuyProduct>(), subtotal: undefined };
 
-	return item;
-}
-
-function interpretSubitem(text: string, order: string): BuyProduct {
-	const [firstString, secondString] = splitLineInTwo(text, order);
-
-	const { pedido, item, emissao, entrega, cliente, eqtn, produto, beneficiario } = readFirstString(firstString, order);
-	const { liga, tamanho, corte, amarracoes, pecas, liquido, bruto, solicitado, atendido, ca, observacao, etiqueta } =
-		readSecondString(secondString);
-
-	const buyProduct: BuyProduct = {
-		pedido: parseInt(pedido),
-		item: parseInt(item),
-		emissao: new Date(emissao),
-		entrega: new Date(entrega),
-		cliente: cliente,
-		eqtn: eqtn,
-		produto: produto,
-		beneficiario: beneficiario,
-		liga: parseInt(liga),
-		tamanho: tamanho,
-		corte: parseInt(corte),
-		amarracoes: parseInt(amarracoes),
-		pecas: parseInt(pecas),
-		liquido: parseFloat(liquido),
-		bruto: parseFloat(bruto),
-		solicitado: parseInt(solicitado),
-		atendido: parseInt(atendido),
-		ca: ca,
-		observacao: observacao,
-		etiqueta: etiqueta,
-	};
-
-	return buyProduct;
-}
-
-function interpretSubtotal(text: string): BuyOrder["subtotal"] {
-	const subtotalRegExp = new RegExp(
-		[
-			`(?<produto>\\w-\\d+)`,
-			`(?<amarracoes>\\d+\\samr)`,
-			`(?<pecas>\\d+\\spçs)`,
-			`(?<liquido>\\b\\d+,\\d{2})`,
-			`(?<bruto>\\b\\d+,\\d{2}\\skg)`,
-		].join("\\s"),
-		"g"
-	);
-
-	const [, produto, amarracoes, pecas, liquido, bruto] = subtotalRegExp.exec(text) || [];
-
-	const subtotal: BuyOrder["subtotal"] = {
-		produto: produto,
-		amarracoes: parseInt(amarracoes),
-		pecas: parseInt(pecas),
-		liquido: parseFloat(liquido),
-		bruto: parseFloat(bruto),
-	};
-
-	return subtotal;
+	return buyOrder;
 }
 
 /*
- * A estratégia para obter todos os atributos do item começa por dividir todas as
- * informações da linha em duas partes, as quais podemos delimitar mais seguramente:
- *
- *  Pedido	 Beneficiário   Tamaho       Etiqueta
- * [ - - - - - - - - - - ] [ - - - - - - - - - - ]
- */
-function splitLineInTwo(text: string, order: string) {
-	const regexPerfil = new RegExp(`(?<perfil>` + order + `)`, "g");
-	const indexPerfil = regexPerfil.exec(text)?.index;
-	if (!indexPerfil) throw new Error();
-
-	const firstBlockStart = 0;
-	const firstBlockEnd = indexPerfil + order.length;
-	const firstBlock = text.substring(firstBlockStart, firstBlockEnd);
-
-	const secondBlockStart = firstBlockEnd;
-	const secondBlockEnd = undefined;
-	const secondBlock = text.substring(secondBlockStart, secondBlockEnd);
-
-	return new Array<string>(firstBlock.trim(), secondBlock.trim());
-}
-
-/*
+  A estratégia para obter todos os atributos do item começa por dividir todas as
+  informações da linha em duas partes, as quais podemos delimitar mais seguramente:
+ 
+   Pedido	 Beneficiário   Tamaho       Etiqueta
+  [ - - - - - - - - - - ] [ - - - - - - - - - - ]
+ 
 	Para o este conjunto de instruções, convém preparar o texto
 	retirando todos os espaços em branco.
 
@@ -179,60 +105,7 @@ function splitLineInTwo(text: string, order: string) {
 	5. Encontrar <Perfil> por RegEx de correspondência exata
 	6. Deduzir <EqTn> buscando dois caracteres para trás do início de perfil
 	7. Ignorar <Cliente> e <Beneficiário>
- */
-function readFirstString(text: string, productId: string) {
-	text.replaceAll(" ", "");
-
-	if (!text) throw new Error("text");
-
-	const pedidoString = text;
-	const pedidoRegExp = new RegExp(`^(?<pedido>\\d+\\b)`, "g");
-	const pedidoRegExpExec = pedidoRegExp.exec(pedidoString);
-	const pedido = pedidoRegExpExec?.at(1);
-
-	if (!pedido) throw new Error("pedido");
-
-	const emissaoString = text;
-	const emissaoRegExp = new RegExp(`(?<emissao>\\d{2}\\/\\d{2}\\/\\d{4})`, "g");
-	const emissaoRegExpExec = emissaoRegExp.exec(emissaoString);
-	const emissao = emissaoRegExpExec?.at(1);
-
-	if (!emissao) throw new Error("emissao");
-
-	const item = text.substring(pedidoRegExp?.lastIndex, emissaoRegExpExec?.index);
-
-	if (!item) throw new Error("item");
-
-	const entregaString = text.substring(emissaoRegExp?.lastIndex, undefined);
-	const entregaRegExp = new RegExp(`(?<entrega>\\d{2}\\/\\d{2}\\/\\d{4})`, "g");
-	const entregaRegExpExec = entregaRegExp.exec(entregaString);
-	const entrega = entregaRegExpExec?.at(1);
-
-	if (!entrega) throw new Error("entrega");
-
-	const produtoString = text;
-	const produtoRegExp = new RegExp(`(?<produto>` + productId + `)`, "g");
-	const produtoRegExpExec = produtoRegExp.exec(produtoString);
-	const produto = produtoRegExpExec?.at(1);
-
-	if (!produto) throw new Error("perfil");
-
-	const eqtn = text.substring(produtoRegExpExec!.index - 2, produtoRegExpExec!.index);
-
-	if (!eqtn) throw new Error("eqtn");
-
-	const cliente = entregaString.substring(entregaRegExp?.lastIndex, produtoRegExpExec!.index - eqtn.length);
-
-	if (!cliente) throw new Error("cliente");
-
-	const beneficiario = " ";
-
-	if (!beneficiario) throw new Error("beneficiario");
-
-	return { pedido, item, emissao, entrega, cliente, eqtn, produto, beneficiario };
-}
-
-/*
+	
 	8.  Encontrar <Tamanho> por RegEx de correspondência exata
 	9.  Deduzir <Liga> que deve estar localizada do início até o começo do Tamanho
 	10. Encontrar <Corte> por RegEx de número
@@ -245,28 +118,74 @@ function readFirstString(text: string, productId: string) {
 	17. Encontrar <CA> por RegEx de correspondência exata
 	18. Deduzir <Observação> que deve estar localizado após CA
  */
-function readSecondString(text: string) {
-	const tamanhoString = text;
+function interpretSubitem(text: string, buyOrder: BuyOrder): BuyProduct {
+	text = text.trim();
+
+	const perfilString = text;
+	const perfilRegExp = new RegExp(`(?<perfil>` + buyOrder.item + `)`, "g");
+	const perfilRegExpExec = perfilRegExp.exec(perfilString);
+	const perfil = perfilRegExpExec?.at(1);
+
+	if (!perfil) throw new Error("Perfil");
+
+	const pedidoString = text;
+	const pedidoRegExp = new RegExp(`^(?<pedido>` + buyOrder.order + `)`, "g");
+	const pedidoRegExpExec = pedidoRegExp.exec(pedidoString);
+	const pedido = pedidoRegExpExec?.at(1);
+
+	if (!pedido) throw new Error("Pedido");
+
+	const emissaoString = text.substring(pedidoRegExp.lastIndex, perfilRegExpExec?.index);
+	const emissaoRegExp = new RegExp(`(?<emissao>\\d{2}\\/\\d{2}\\/\\d{4})`, "g");
+	const emissaoRegExpExec = emissaoRegExp.exec(emissaoString);
+	const emissao = emissaoRegExpExec?.at(1);
+
+	if (!emissao) throw new Error("Emissão");
+
+	const item = text.substring(pedidoRegExp?.lastIndex, emissaoRegExpExec?.index);
+
+	if (!item) throw new Error("Item");
+
+	const entregaString = text.substring(emissaoRegExp?.lastIndex, perfilRegExpExec?.index);
+	const entregaRegExp = new RegExp(`(?<entrega>\\d{2}\\/\\d{2}\\/\\d{4})`, "g");
+	const entregaRegExpExec = entregaRegExp.exec(entregaString);
+	const entrega = entregaRegExpExec?.at(1);
+
+	if (!entrega) throw new Error("Entrega");
+
+	const eqtn = text.substring(perfilRegExpExec!.index - 2, perfilRegExpExec!.index);
+
+	if (!eqtn) throw new Error("EqTn");
+
+	const cliente = text.substring(entregaRegExp?.lastIndex, perfilRegExpExec!.index - eqtn.length);
+
+	if (!cliente) throw new Error("Cliente");
+
+	const beneficiario = " "; //-> ""
+
+	if (!beneficiario) throw new Error("Beneficiário");
+
+	const tamanhoString = text.substring(perfilRegExp.lastIndex, undefined);
 	const tamanhoRegExp = new RegExp(`(?<tamanho>T\\d{1})`, "g");
 	const tamanhoRegExpExec = tamanhoRegExp.exec(tamanhoString);
 	const tamanho = tamanhoRegExpExec?.at(1);
 
 	if (!tamanho) throw new Error("tamanho");
 
-	const ligaString = text.substring(0, tamanhoRegExpExec?.index);
+	const ligaString = text.substring(perfilRegExp.lastIndex, tamanhoRegExpExec?.index);
 	const liga = ligaString.trim();
 
 	if (!liga) throw new Error("liga");
 
 	const corteString = text.substring(tamanhoRegExp.lastIndex, undefined);
-	const corteRegExp = new RegExp(`(?<corte>\\b\\d+)`, "g");
+	const corteRegExp = new RegExp(`(?<corte>\\d+)`, "g");
 	const corteRegExpExec = corteRegExp.exec(corteString);
 	const corte = corteRegExpExec?.at(1);
 
 	if (!corte) throw new Error("corte");
 
 	const amarracoesString = corteString.substring(corteRegExp.lastIndex, undefined);
-	const amarracoesRegExp = new RegExp(`(?<amarracoes>\\b\\d+)`, "g");
+	const amarracoesRegExp = new RegExp(`(?<amarracoes>\\d+)`, "g");
 	const amarracoesRegExpExec = amarracoesRegExp.exec(amarracoesString);
 	const amarracoes = amarracoesRegExpExec?.at(1);
 
@@ -326,5 +245,84 @@ function readSecondString(text: string) {
 
 	if (!etiqueta) throw new Error("etiqueta");
 
-	return { liga, tamanho, corte, amarracoes, pecas, liquido, bruto, solicitado, atendido, ca, observacao, etiqueta };
+	const buyProduct = {
+		pedido: Number(pedido),
+		item: Number(pedido),
+		emissao: new Date(emissao),
+		entrega: new Date(entrega),
+		cliente,
+		eqtn,
+		perfil,
+		beneficiario,
+		liga: Number(pedido),
+		tamanho,
+		corte: Number(pedido),
+		amarracoes: Number(pedido),
+		pecas: Number(pedido),
+		liquido: Number(pedido),
+		bruto: Number(pedido),
+		solicitado: Number(pedido),
+		atendido: Number(pedido),
+		ca,
+		observacao,
+		etiqueta,
+	};
+
+	return buyProduct;
+
+	/*
+	const [firstString, secondString] = splitLineInTwo(text, order);
+	
+	const { pedido, item, emissao, entrega, cliente, eqtn, produto, beneficiario } = readFirstString(firstString, order);
+	const { liga, tamanho, corte, amarracoes, pecas, liquido, bruto, solicitado, atendido, ca, observacao, etiqueta } =
+	readSecondString(secondString);
+	
+	const buyProduct: BuyProduct = {
+		pedido: parseInt(pedido),
+		item: parseInt(item),
+		emissao: new Date(emissao),
+		entrega: new Date(entrega),
+		cliente: cliente,
+		eqtn: eqtn,
+		produto: produto,
+		beneficiario: beneficiario,
+		liga: parseInt(liga),
+		tamanho: tamanho,
+		corte: parseInt(corte),
+		amarracoes: parseInt(amarracoes),
+		pecas: parseInt(pecas),
+		liquido: parseFloat(liquido),
+		bruto: parseFloat(bruto),
+		solicitado: parseInt(solicitado),
+		atendido: parseInt(atendido),
+		ca: ca,
+		observacao: observacao,
+		etiqueta: etiqueta,
+	};
+	*/
+}
+
+function interpretSubtotal(text: string, buyOrder: BuyOrder): BuyOrder["subtotal"] {
+	const subtotalRegExp = new RegExp(
+		[
+			`(?<produto>\\w-\\d+)`,
+			`(?<amarracoes>\\d+\\samr)`,
+			`(?<pecas>\\d+\\spçs)`,
+			`(?<liquido>\\b\\d+,\\d{2})`,
+			`(?<bruto>\\b\\d+,\\d{2}\\skg)`,
+		].join("\\s"),
+		"g"
+	);
+
+	const [, produto, amarracoes, pecas, liquido, bruto] = subtotalRegExp.exec(text) || [];
+
+	const subtotal: BuyOrder["subtotal"] = {
+		produto: produto,
+		amarracoes: parseInt(amarracoes),
+		pecas: parseInt(pecas),
+		liquido: parseFloat(liquido),
+		bruto: parseFloat(bruto),
+	};
+
+	return subtotal;
 }
