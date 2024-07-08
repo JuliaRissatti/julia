@@ -6,10 +6,9 @@ import FileHandler from "../file-handler";
 import readBuyOrder from "../scrappers/buyOrderScrapper";
 
 import readPNG from "@/app/Services/Tesseract/read-png";
-import { BuyOrder } from "@/app/models/item/buy-product";
 import convertToPNG from "@/app/Services/PDF-Conversion/pdf-to-png";
 
-export default function BuyOrderComponent(parameters: { order: BuyOrder | undefined; handleBuyOrder: any }) {
+export default function BuyOrderComponent(parameters: { handleBuyOrder: any }) {
 	const [file, setFile] = useState<File>();
 	const [fileStatus, setFileStatus] = useState<string | undefined>(undefined);
 

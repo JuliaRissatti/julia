@@ -2,16 +2,15 @@
 
 import { SetStateAction, useState } from "react";
 
-import { Orders } from "../Order/Orders";
-import BuyOrderComponent from "../Order/BuyOrderComponent";
-import SellOrderComponent from "../Order/SellOrderComponent";
+import BuyOrderComponent from "../(components)/Order/BuyOrderComponent";
+import SellOrderComponent from "../(components)/Order/SellOrderComponent";
 
 import { BuyOrder } from "@/app/models/item/buy-order";
 import { SellOrder } from "@/app/models/item/sell-order";
 import { BuyProduct } from "@/app/models/item/buy-product";
 import { SellProduct } from "@/app/models/item/sell-product";
 
-export default function OrdersView(parameters: { orders: Orders; hidden: boolean }) {
+export default function Pedido() {
 	const [buyOrders, setBuyOrders] = useState<Array<BuyOrder>>();
 	const [sellOrder, setSellOrder] = useState<SellOrder>();
 
@@ -23,15 +22,13 @@ export default function OrdersView(parameters: { orders: Orders; hidden: boolean
 		setSellOrder(sellOrder);
 	};
 
-	const orders = parameters.orders;
-
 	return (
 		<>
-			<h1 className="col-span-1 text-lg text-center" hidden={parameters.hidden}>
-				Compra
-			</h1>
+			<div id="canvas" hidden />
 
-			<div className="col-span-6" hidden={parameters.hidden}>
+			<h1 className="col-span-1 text-lg text-center">Compra</h1>
+
+			<div className="col-span-6">
 				{buyOrders ? (
 					<>
 						{buyOrders.map((buyOrder) => (
@@ -71,11 +68,9 @@ export default function OrdersView(parameters: { orders: Orders; hidden: boolean
 				)}
 			</div>
 
-			<h1 className="col-span-1 text-lg text-center" hidden={parameters.hidden}>
-				Venda
-			</h1>
+			<h1 className="col-span-1 text-lg text-center">Venda</h1>
 
-			<div className="col-span-6" hidden={parameters.hidden}>
+			<div className="col-span-6">
 				{sellOrder ? (
 					sellOrder?.items.map((item: SellProduct, index: number) => (
 						<div className="grid grid-cols-4 justify-evenly justify-items-center my-7 bg-azure" key={item?.produto}>
@@ -86,27 +81,23 @@ export default function OrdersView(parameters: { orders: Orders; hidden: boolean
 						</div>
 					))
 				) : (
-					<SellOrderComponent sellOrder={orders.sellOrder} handleSellOrder={handleSellOrder} />
+					<SellOrderComponent sellOrder={sellOrder} handleSellOrder={handleSellOrder} />
 				)}
 			</div>
 
-			<h1 className="col-span-1 text-lg text-center" hidden={parameters.hidden}>
-				Total
-			</h1>
+			<h1 className="col-span-1 text-lg text-center">Total</h1>
 
-			<div className="col-span-6" hidden={parameters.hidden}>
+			<div className="col-span-6">
 				{buyOrders &&
 					sellOrder &&
 					sellOrder.items.map((sellProduct) => {
 						const buyProduct = buyOrders.find((buyOrder) => buyOrder.order === sellProduct.produto)?.subtotal;
-
-						if (buyProduct)
-							return (
-								<>
-									<div>{sellProduct.peso - buyProduct?.liquido}</div>
-									<div>{sellProduct.pecas - buyProduct?.pecas}</div>
-								</>
-							);
+						return (
+							<>
+								<div>{buyProduct?.liquido ? sellProduct.peso - buyProduct?.liquido : "Erro"}</div>
+								<div>{buyProduct?.liquido ? sellProduct.pecas - buyProduct?.pecas : "Erro"}</div>
+							</>
+						);
 					})}
 			</div>
 		</>

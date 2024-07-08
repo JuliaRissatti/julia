@@ -6,8 +6,6 @@ import OrdersView from "./OrdersView";
 import { Orders } from "../Order/Orders";
 import { Billing } from "../Billing/Billing";
 
-import { BuyOrder } from "@/app/models/item/buy-product";
-
 export default function ClientOrdersView(parameters: { clientOrders: Billing }) {
 	const clientOrders = parameters.clientOrders;
 

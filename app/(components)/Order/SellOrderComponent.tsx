@@ -9,7 +9,7 @@ import readPNG from "@/app/Services/Tesseract/read-png";
 import { SellOrder } from "@/app/models/item/sell-order";
 import convertToPNG from "@/app/Services/PDF-Conversion/pdf-to-png";
 
-export default function SellOrderComponent(parameters: { order: SellOrder | undefined; handleSellOrder: any }) {
+export default function SellOrderComponent(parameters: { sellOrder: SellOrder | undefined; handleSellOrder: any }) {
 	const [file, setFile] = useState<File>();
 	const [fileStatus, setFileStatus] = useState<string | undefined>(undefined);
 
@@ -25,7 +25,7 @@ export default function SellOrderComponent(parameters: { order: SellOrder | unde
 		const pages = await readPNG(PNGs);
 
 		setFileStatus("Interpretando");
-		const sellOrder = readSellOrder(parameters?.order?.orderNumber, pages);
+		const sellOrder = readSellOrder(parameters?.sellOrder?.order, pages);
 
 		setFileStatus(undefined);
 		parameters.handleSellOrder(sellOrder);

@@ -26,34 +26,3 @@ export interface BuyProductSubtotal {
 	liquido: number;
 	bruto: number;
 }
-
-export interface RawBuyProduct {
-	pedido: string;
-	item: string;
-	emissao: string;
-	entrega: string;
-	cliente: string;
-	eqtn: string;
-	produto: string;
-	beneficiario: string;
-	liga: string;
-	tamanho: string;
-	corte: string;
-	amarracoes: string;
-	pecas: string;
-	liquido: string;
-	bruto: string;
-	solicitado: string;
-	atendido: string;
-	ca: string;
-	observacao: string;
-	etiqueta: string;
-}
-
-export interface RawBuyProductSubtotal {
-	produto: string;
-	amarracoes: string;
-	pecas: string;
-	liquido: string;
-	bruto: string;
-}

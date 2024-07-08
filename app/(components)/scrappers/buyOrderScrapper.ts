@@ -7,21 +7,13 @@ export default function readBuyOrder(pages: Array<Page>): Array<BuyOrder> {
 	// Concatenate all Lines from all Pages
 	const lines = pages.reduce((lines: Array<Line>, page) => lines.concat(page.lines), new Array<Line>());
 
-	const header = extractHeader(lines.slice(0, 2));
+	const headerLines = lines.slice(0, 3)
+	const header = extractHeader(headerLines);
 
-	let table = extractBuyOrders(lines.slice(3, undefined));
+	const buyOrderLines = lines.slice(3, undefined)
+	const buyOrders = extractBuyOrders(buyOrderLines, header.order);
 
-	table = filterTable(header.pedido);
-
-	// const buyOrderTable = lines.slice(buyOrderTableHeader + 1, buyOrderTableFooter);
-
-	// const buyOrderLines: Array<Array<Line>> = extractBuyOrderLines(buyOrderTable);
-
-	// const buyOrderString: Array<RawBuyOrder> = buyOrderLines.map((lines) => convertToString(lines));
-
-	// const buyOrder: Array<BuyOrder> = buyOrderString.map((rawBuyOrder) => convertToBuyOrder(rawBuyOrder));
-
-	// return buyOrder;
+	return buyOrders;
 }
 
 /*
@@ -31,9 +23,7 @@ export default function readBuyOrder(pages: Array<Page>): Array<BuyOrder> {
  * 2. Volumes para Embarque - (todos)
  * 3. Semana Corrente {número de semanas decorridas no ano} de {Período de emissão do pedido} - - Pedido = {Número do Pedido} - {Período de ?}
  */
-function extractHeader(lines: Array<Line>): { matrix: string; title: string; order: string } {
-	const headerLines = lines.slice(0, 2);
-
+function extractHeader(headerLines: Array<Line>): { matrix: string; title: string; order: string } {
 	const matrix = headerLines.at(0)!.text;
 
 	const titleString = headerLines.at(1)!.text;
@@ -85,13 +75,14 @@ function extractBuyOrders(lines: Array<Line>, order: string) {
 }
 
 function interpretItem(text: string): BuyOrder {
-	const itemRegExp = new RegExp(`^(?<item>)\\w+-\\d+`, `g`);
-	const pedidoRegExpExec = itemRegExp.exec(text);
-	const pedido = pedidoRegExpExec?.at(1);
+	const orderRegExp = new RegExp(`^(?<item>)\\w+\\-\\d+`, `g`);
+	const orderRegExpExec = orderRegExp.exec(text);
+	const order = orderRegExpExec?.at(1);
 
+	if (!order) throw new Error("Cant sry");
 	// Podemos, se necessário, interpretar a transportadora e o beneficiador
 
-	const item: BuyOrder = { order: Number(pedido), items: new Array<BuyProduct>(), subtotal: undefined };
+	const item: BuyOrder = { order, items: new Array<BuyProduct>(), subtotal: undefined };
 
 	return item;
 }
@@ -144,7 +135,7 @@ function interpretSubtotal(text: string): BuyOrder["subtotal"] {
 	const [, produto, amarracoes, pecas, liquido, bruto] = subtotalRegExp.exec(text) || [];
 
 	const subtotal: BuyOrder["subtotal"] = {
-		produto: Number(produto),
+		produto: produto,
 		amarracoes: parseInt(amarracoes),
 		pecas: parseInt(pecas),
 		liquido: parseFloat(liquido),

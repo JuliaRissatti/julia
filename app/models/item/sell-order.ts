@@ -1,6 +1,6 @@
 import { SellProduct } from "./sell-product";
 
 export interface SellOrder {
-	orderNumber: number|undefined;
+	order: number|undefined;
 	items: Array<SellProduct>;
 }

@@ -1,5 +1,5 @@
+import { BuyOrder } from "@/app/models/item/buy-order";
 import { BuyProduct } from "@/app/models/item/buy-product";
-import { BuyOrder } from "@/app/models/item/buy-product";
 
 export default function ItemsByBuyOrder(product: BuyOrder) {
 	return (
@@ -98,10 +98,10 @@ export default function ItemsByBuyOrder(product: BuyOrder) {
 						<td colSpan={3} className="border-slate-600 p-3">
 							Sub-total
 						</td>
-						<td className="border border-slate-600 bg-slate-300 text-black p-3">{product.subtotal.amarracoes}</td>
-						<td className="border border-slate-600 bg-slate-300 text-black p-3">{product.subtotal.pecas}</td>
-						<td className="border border-slate-600 bg-slate-300 text-black p-3">{product.subtotal.liquido}</td>
-						<td className="border border-slate-600 bg-slate-300 text-black p-3">{product.subtotal.bruto}</td>
+						<td className="border border-slate-600 bg-slate-300 text-black p-3">{product.subtotal?.amarracoes}</td>
+						<td className="border border-slate-600 bg-slate-300 text-black p-3">{product.subtotal?.pecas}</td>
+						<td className="border border-slate-600 bg-slate-300 text-black p-3">{product.subtotal?.liquido}</td>
+						<td className="border border-slate-600 bg-slate-300 text-black p-3">{product.subtotal?.bruto}</td>
 						<td />
 						<td hidden className="border border-slate-600 p-3" />
 						<td hidden className="border border-slate-600 p-3" />

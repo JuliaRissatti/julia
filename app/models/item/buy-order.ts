@@ -1,13 +1,7 @@
-import { BuyProduct, BuyProductSubtotal, RawBuyProduct, RawBuyProductSubtotal } from "./buy-product";
+import { BuyProduct, BuyProductSubtotal } from "./buy-product";
 
 export interface BuyOrder {
-	order: number;
+	order: string;
 	items: Array<BuyProduct>;
 	subtotal: BuyProductSubtotal | undefined;
-}
-
-export interface RawBuyOrder {
-	productId: string;
-	items: Array<RawBuyProduct>;
-	subtotal: RawBuyProductSubtotal;
 }

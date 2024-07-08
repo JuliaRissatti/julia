@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-import { BuyOrder } from "@/app/models/item/buy-product";
+import { BuyOrder } from "@/app/models/item/buy-order";
 import { SellProduct } from "@/app/models/item/sell-product";
 
 export default function OrderTotal(param: { buyProduct: BuyOrder; sellOrder: SellProduct }) {
@@ -47,10 +47,10 @@ export default function OrderTotal(param: { buyProduct: BuyOrder; sellOrder: Sel
 									<div>Total</div>
 								</div>
 								<div className="content-center">
-									<div>Peças: {buyProduct.subtotal.pecas - sellOrder.pecas}</div>
+									<div>Peças: {buyProduct.subtotal ? buyProduct.subtotal?.pecas - sellOrder?.pecas : "Erro"}</div>
 								</div>
 								<div className="content-center">
-									<div>Peso: {buyProduct.subtotal.liquido - sellOrder.peso}</div>
+									<div>Peso: {buyProduct.subtotal ? buyProduct?.subtotal.liquido - sellOrder.peso : "Erro"}</div>
 								</div>
 							</div>
 						</>
