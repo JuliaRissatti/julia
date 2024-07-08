@@ -1,15 +1,59 @@
-import { BuyProduct, BuyProductSubtotal, RawBuyProduct, RawBuyProductSubtotal } from "./buy-order";
+import { Order } from "@/app/(components)/Order/Order";
 
-export interface BuyOrder {
-	orderId: number;
-	productId: string;
-	items: Array<BuyProduct>;
-	subtotal: BuyProductSubtotal;
+export interface BuyProduct extends Order {
+	emissao: Date;
+	entrega: Date;
+	eqtn: string;
+	beneficiario: string;
+	liga: number;
+	tamanho: string;
+	corte: number;
+	amarracoes: number;
+	pecas: number;
+	liquido: number;
+	bruto: number;
+	solicitado: number;
+	atendido: number;
+	ca: string;
+	observacao: string;
+	etiqueta: string;
 }
 
-export interface RawBuyOrder {
-	orderId: string;
-	productId: string;
-	items: Array<RawBuyProduct>;
-	subtotal: RawBuyProductSubtotal;
+export interface BuyProductSubtotal {
+	produto: string;
+	amarracoes: number;
+	pecas: number;
+	liquido: number;
+	bruto: number;
+}
+
+export interface RawBuyProduct {
+	pedido: string;
+	item: string;
+	emissao: string;
+	entrega: string;
+	cliente: string;
+	eqtn: string;
+	produto: string;
+	beneficiario: string;
+	liga: string;
+	tamanho: string;
+	corte: string;
+	amarracoes: string;
+	pecas: string;
+	liquido: string;
+	bruto: string;
+	solicitado: string;
+	atendido: string;
+	ca: string;
+	observacao: string;
+	etiqueta: string;
+}
+
+export interface RawBuyProductSubtotal {
+	produto: string;
+	amarracoes: string;
+	pecas: string;
+	liquido: string;
+	bruto: string;
 }

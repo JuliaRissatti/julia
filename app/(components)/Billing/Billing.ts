@@ -1,9 +1,10 @@
 import { Line } from "tesseract.js";
+import { Orders } from "../Order/Orders";
 
 export interface Billing {
 	filial: string;
 	cliente: string;
-	pedidos: Array<number>;
+	pedidos: Array<Orders>;
 	subtotal: Line;
 }
 

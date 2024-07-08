@@ -9,28 +9,32 @@ import readPNG from "@/app/Services/Tesseract/read-png";
 import { BuyOrder } from "@/app/models/item/buy-product";
 import convertToPNG from "@/app/Services/PDF-Conversion/pdf-to-png";
 
-export default function BuyOrderComponent({ orderNumber }: any) {
+export default function BuyOrderComponent(parameters: { order: BuyOrder | undefined; handleBuyOrder: any }) {
 	const [file, setFile] = useState<File>();
-
-	const [buyOrder, setBuyOrder] = useState<Array<BuyOrder>>();
+	const [fileStatus, setFileStatus] = useState<string | undefined>(undefined);
 
 	useEffect(() => {
 		if (file) readBuyOrderPDF(file);
 	}, [file]);
 
 	async function readBuyOrderPDF(buyOrderPDF: File) {
+		setFileStatus("Convertendo para PNG...");
 		const PNGs = await convertToPNG(buyOrderPDF, false);
+
+		setFileStatus("Extraindo dados...");
 		const pages = await readPNG(PNGs);
-		const buyOrder = readBuyOrder(orderNumber, pages);
-		setBuyOrder(buyOrder);
+
+		setFileStatus("Interpretando");
+		const buyOrder = readBuyOrder(pages);
+
+		setFileStatus(undefined);
+		parameters.handleBuyOrder(buyOrder);
 	}
 
 	return (
 		<>
 			<div>
-				<FileHandler
-                    label={"Pedido de Compra"}
-                    onFileUpdate={(file: File) => setFile(file)} />
+				<FileHandler label={"Pedido de Compra"} status={fileStatus} onFileUpdate={(file: File) => setFile(file)} />
 			</div>
 		</>
 	);

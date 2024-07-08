@@ -1,25 +1,40 @@
 // https://tesseract-ocr.github.io/tessdoc/Data-Files-in-different-versions.html
 
-import { ImageLike, Line, Page, createWorker } from "tesseract.js";
+import Tesseract, { ImageLike, Page, createScheduler, createWorker } from "tesseract.js";
 
-async function readPNG(PNGs: ImageLike[]) {
-	let pages: Array<Page> = new Array<Page>();
+export default async function readPNG(PNGs: ImageLike[]) {
+	const scheduler = createScheduler();
 
-	for (const PNG of PNGs) {
+	for (let workers = 0; workers < PNGs.length*2; workers++) {
 		const worker = await createWorker("por", 1, {
 			logger: (m) => console.log(m),
 		});
-
-		const recognition = await worker.recognize(PNG);
-
-		const page: Page = recognition.data;
-
-		await worker.terminate();
-
-		pages.push(page);
+		scheduler.addWorker(worker);
 	}
 
-	return pages;
+	const pages = await Promise.all(PNGs.map((PNG) => scheduler.addJob("recognize", PNG)));
+
+	await scheduler.terminate();
+
+	return pages.map((recognizeResult: Tesseract.RecognizeResult) => recognizeResult.data);
 }
 
-export default readPNG;
+/*
+const rets 
+
+	const recognition = await worker.recognize(PNG);
+
+	const page: Page = recognition.data;
+
+	await worker.terminate();
+
+	pages.push(page);
+
+		const recognition = await worker.recognize(PNG);
+		
+		// const page: Page = recognition.data;
+		
+		// await worker.terminate();
+		
+		// pages.push(page);
+		*/

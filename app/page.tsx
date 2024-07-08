@@ -5,18 +5,18 @@ import { useEffect, useState } from "react";
 import readPNG from "./Services/Tesseract/read-png";
 import convertToPNG from "./Services/PDF-Conversion/pdf-to-png";
 
-import { Billing } from "./(components)/Billing/Model/Billing";
+import { Billing } from "./(components)/Billing/Billing";
 
 import FileHandler from "./(components)/file-handler";
 import readBilling from "./(components)/scrappers/billScrapper";
-import BillingView from "./(components)/Billing/View/BillingView/BillingView";
+import ClientOrdersView from "./(components)/ClientOrders/ClientOrdersView";
 
-function Home() {
+export default function Home() {
 	// Arquivo do faturamento em PDF;
 	const [billingPDF, setBillingPDF] = useState<File>();
-	const [billings, setBillings] = useState<Array<Billing>>();
+	const [clientsOrders, setClientsOrder] = useState<Array<Billing>>();
 
-	const [status, setStatus] = useState<string | undefined>(undefined);
+	const [fileStatus, setFileStatus] = useState<string | undefined>(undefined);
 
 	const fileName = billingPDF?.name;
 
@@ -29,17 +29,17 @@ function Home() {
 	}, [billingPDF]);
 
 	async function readBillingPDF(PDF: File) {
-		setStatus("Convertendo para PNG...");
+		setFileStatus("Convertendo para PNG...");
 		const PNGs = await convertToPNG(PDF, false);
 
-		setStatus("Extraindo dados...");
+		setFileStatus("Extraindo dados...");
 		const pages = await readPNG(PNGs);
 
-		setStatus("Interpretando");
-		const ordersByClient = readBilling(pages);
+		setFileStatus("Interpretando");
+		const clientsOrders = readBilling(pages);
 
-		setStatus(undefined);
-		setBillings(ordersByClient);
+		setFileStatus(undefined);
+		setClientsOrder(clientsOrders);
 	}
 
 	return (
@@ -48,18 +48,20 @@ function Home() {
 				<div className={`transition-all ${billingPDF ? "h-min" : "h-max"} duration-300`}>
 					<div className="grid grid-rows-1 grid-flow-col justify-center items-center gap-3">
 						<p className="font-semibold">Conferência de faturamento</p>
-						<FileHandler label="Faturamento" status={status} onFileUpdate={onFileUpdate} />
+						<FileHandler label="Faturamento" status={fileStatus} onFileUpdate={onFileUpdate} />
 					</div>
 				</div>
 
 				<div id="canvas" hidden />
 
-				{billings?.map((billing: Billing, index: number) => (
-					<BillingView key={index} billing={billing} />
+				{clientsOrders?.map((clientOrders: Billing, index: number) => (
+					<div className="grid grid-cols-7 grid-flow-row auto-rows-min bg-indigo-dye m-5 p-2" key={index}>
+						<h1 className="col-span-full text-lg font-semibold text-center">{clientOrders.cliente}</h1>
+
+						<ClientOrdersView clientOrders={clientOrders} />
+					</div>
 				))}
 			</div>
 		</>
 	);
 }
-
-export default Home;

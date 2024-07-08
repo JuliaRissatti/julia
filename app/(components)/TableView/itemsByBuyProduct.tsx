@@ -1,4 +1,4 @@
-import { BuyProduct } from "@/app/models/item/buy-order";
+import { BuyProduct } from "@/app/models/item/buy-product";
 import { BuyOrder } from "@/app/models/item/buy-product";
 
 export default function ItemsByBuyOrder(product: BuyOrder) {

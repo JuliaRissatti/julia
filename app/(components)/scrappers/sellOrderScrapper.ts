@@ -2,7 +2,7 @@ import { Page, Line } from "tesseract.js";
 
 import { RawSellProduct } from "@/app/models/item/sell-product";
 
-export default function readSellOrder(orderNumber: number, pages: Array<Page>) {
+export default function readSellOrder(orderNumber: number | undefined, pages: Array<Page>) {
 	// Concatenate all Lines from all Pages
 	const lines = pages.reduce((lines: Array<Line>, page) => lines.concat(page.lines), new Array<Line>());
 
@@ -22,7 +22,7 @@ export default function readSellOrder(orderNumber: number, pages: Array<Page>) {
 
 	const sellOrder = sellOrderString.map((product) => convertToSellOrder(product));
 
-	return {orderNumber, items: sellOrder};
+	return { orderNumber, items: sellOrder };
 }
 
 function extractSellOrdersLines(sellOrderTable: Array<Line>) {
@@ -35,7 +35,7 @@ function extractSellOrdersLines(sellOrderTable: Array<Line>) {
 		const itemString = itemRegExpExec?.at(1);
 		const item = Number(itemString);
 
-		if (item === index) {
+		if (item === index + 1) {
 			index = index + 1;
 			orderLines.push(new Array<Line>(line));
 		} else {
@@ -61,36 +61,36 @@ function convertToString(productLines: Array<Line>) {
 	if (!text) throw new Error("text");
 
 	const itemString = text;
-	const itemRegExp = new RegExp(`^(?<produto>\\d+\\b)`, "g");
+	const itemRegExp = new RegExp(`^(?<item>\\d+\\b)`, "g");
 	const itemRegExpExec = itemRegExp.exec(itemString);
 	const item = itemRegExpExec?.at(1);
 
-	if (!item) throw new Error("produto");
+	if (!item) throw new Error("item");
 
 	const produtoString = itemString.substring(itemRegExp.lastIndex, undefined);
-	const produtoRegExp = new RegExp(`(?<produto>\\b\\w+\\b)`, "g");
+	const produtoRegExp = new RegExp(`(?<produto>\\w+-\\d+)`, "g");
 	const produtoRegExpExec = produtoRegExp.exec(produtoString);
 	const produto = produtoRegExpExec?.at(1);
 
 	if (!produto) throw new Error("produto");
 
 	const beneficiarioString = produtoString.substring(produtoRegExp.lastIndex, undefined);
-	const beneficiarioRegExp = new RegExp(`(?<beneficiario>\\b\\w+\\b)`, "g");
+	const beneficiarioRegExp = new RegExp(`(?<beneficiario>\\w+\\b)`, "g");
 	const beneficiarioRegExpExec = beneficiarioRegExp.exec(beneficiarioString);
 	const beneficiario = beneficiarioRegExpExec?.at(1);
 
 	if (!beneficiario) throw new Error("beneficiario");
 
 	const tamanhoString = beneficiarioString.substring(beneficiarioRegExp.lastIndex, undefined);
-	const tamanhoRegExp = new RegExp(`(?<tamanho>\\bT\\d\\b)`, "g");
+	const tamanhoRegExp = new RegExp(`(?<tamanho>T\\d+\\b)`, "g");
 	const tamanhoRegExpExec = tamanhoRegExp.exec(tamanhoString);
 	const tamanho = tamanhoRegExpExec?.at(1);
 
 	if (!tamanho) throw new Error("tamanho");
 
-	const ligaString = beneficiarioString.substring(beneficiarioRegExp.lastIndex, tamanhoRegExpExec?.index);
+	const ligaString = tamanhoString.substring(beneficiarioRegExp.lastIndex, tamanhoRegExpExec?.index);
 	const ligaStringSplit = ligaString.trim().split(" ");
-	const liga = ligaStringSplit.splice(-1, 1).at(0);
+	const liga = ligaStringSplit.at(-1);
 
 	if (!liga) throw new Error("liga");
 

@@ -1,88 +1,157 @@
 import { Line, Page } from "tesseract.js";
-import { BuyOrder, RawBuyOrder } from "@/app/models/item/buy-product";
-import { BuyProduct, RawBuyProduct } from "@/app/models/item/buy-order";
 
-export default function readBuyOrder(orderId: string, pages: Array<Page>) {
+import { BuyOrder } from "@/app/models/item/buy-order";
+import { BuyProduct } from "@/app/models/item/buy-product";
+
+export default function readBuyOrder(pages: Array<Page>): Array<BuyOrder> {
 	// Concatenate all Lines from all Pages
 	const lines = pages.reduce((lines: Array<Line>, page) => lines.concat(page.lines), new Array<Line>());
 
-	// Find the order's table beggining
-	const buyOrderTableHeader = lines.findIndex((line: Line) => line.text.includes("Pedido/Item"));
-	if (buyOrderTableHeader < 0) throw Error("Não foi possível encontrar o início da tabela de pedidos.");
+	const header = extractHeader(lines.slice(0, 2));
 
-	// Find the order's table ending
-	const buyOrderTableFooter = lines.findIndex((line: Line) => line.text.includes("Total Geral"));
-	if (buyOrderTableFooter < 0) throw Error("Não foi possível encontrar o fim da tabela de pedidos.");
+	let table = extractBuyOrders(lines.slice(3, undefined));
 
-	const buyOrderTable = lines.slice(buyOrderTableHeader + 1, buyOrderTableFooter);
+	table = filterTable(header.pedido);
 
-	const buyOrderLines: Array<Array<Line>> = extractBuyOrderLines(buyOrderTable);
+	// const buyOrderTable = lines.slice(buyOrderTableHeader + 1, buyOrderTableFooter);
 
-	const buyOrderString: Array<RawBuyOrder> = buyOrderLines.map((lines) => convertToString(lines, orderId));
+	// const buyOrderLines: Array<Array<Line>> = extractBuyOrderLines(buyOrderTable);
 
-	const buyOrder: Array<BuyOrder> = buyOrderString.map((rawBuyOrder) => convertToBuyOrder(rawBuyOrder));
+	// const buyOrderString: Array<RawBuyOrder> = buyOrderLines.map((lines) => convertToString(lines));
 
-	return buyOrder;
+	// const buyOrder: Array<BuyOrder> = buyOrderString.map((rawBuyOrder) => convertToBuyOrder(rawBuyOrder));
+
+	// return buyOrder;
 }
 
-function extractBuyOrderLines(buyOrderTable: Array<Line>) {
-	const ordersLines = new Array<Array<Line>>();
+/*
+ * Espera-se que todos os PDFs de compra tenham as três primeiras linhas da seguinte forma:
+ *
+ * 1. Matriz
+ * 2. Volumes para Embarque - (todos)
+ * 3. Semana Corrente {número de semanas decorridas no ano} de {Período de emissão do pedido} - - Pedido = {Número do Pedido} - {Período de ?}
+ */
+function extractHeader(lines: Array<Line>): { matrix: string; title: string; order: string } {
+	const headerLines = lines.slice(0, 2);
 
-	let lastIndex = 0;
-	buyOrderTable.forEach((line: Line, index: number) => {
-		if (line.text.includes("Sub-Total")) {
-			const data = buyOrderTable.slice(lastIndex, index + 1);
-			ordersLines.push(data);
-			lastIndex = index + 1;
+	const matrix = headerLines.at(0)!.text;
+
+	const titleString = headerLines.at(1)!.text;
+	const titleRegExp = new RegExp(`^(?<titulo>Volumes\\spara\\sEmbarque)`, "g");
+	const titleRegExpExec = titleRegExp.exec(titleString);
+	const title = titleRegExpExec?.at(1);
+
+	if (!title) throw new Error(`Não parece ser um arquivo de "Volumes para Embarque".`);
+
+	const orderString = headerLines.at(2)!.text;
+	const orderRegExp = new RegExp(`Pedido\\s=\\s(?<order>\\d+)`, "g");
+	const orderRegExpExec = orderRegExp.exec(orderString);
+	const order = orderRegExpExec?.at(1);
+
+	if (!order) throw new Error(`Não foi possível ler qual é o número desse pedido.`);
+
+	return { matrix, title, order };
+}
+
+function extractBuyOrders(lines: Array<Line>, order: string) {
+	const totalGeralIndex = lines.findIndex((line: Line) => line.text.includes("Total Geral"));
+
+	const itemRegExp = new RegExp(`^(?<item>)\\w+-\\d+`, `g`);
+	const subitemRegExp = new RegExp(`^(?<subitem>)` + order, `g`);
+	const subtotalRegExp = new RegExp(`^(?<subTotal>Sub-Total)`, `g`);
+
+	const buyOrders: Array<BuyOrder> = new Array<BuyOrder>();
+
+	for (const line of lines.slice(0, totalGeralIndex)) {
+		const text = line.text;
+
+		const lastBuyOrder = buyOrders?.at(-1);
+
+		if (itemRegExp.test(text)) {
+			const order = interpretItem(text);
+			buyOrders.push(order);
+		} else if (subitemRegExp.test(text)) {
+			const item = interpretSubitem(text, order);
+			lastBuyOrder!.items.push(item);
+		} else if (subtotalRegExp.test(text)) {
+			const subtotal = interpretSubtotal(text);
+			lastBuyOrder!.subtotal = subtotal;
+		} else {
+			// ignore
 		}
-	});
+	}
 
-	return ordersLines;
+	return buyOrders;
 }
 
-function convertToString(product: Array<Line>, orderId: string) {
-	if (product.length < 3) throw new Error("Não rolou nem receber as linhas do produto");
+function interpretItem(text: string): BuyOrder {
+	const itemRegExp = new RegExp(`^(?<item>)\\w+-\\d+`, `g`);
+	const pedidoRegExpExec = itemRegExp.exec(text);
+	const pedido = pedidoRegExpExec?.at(1);
 
-	const headerLine = product.at(0);
-	const itemLines = product.slice(1, -1);
-	const subtotalLine = product.at(-1);
+	// Podemos, se necessário, interpretar a transportadora e o beneficiador
 
-	if (!headerLine || !itemLines || !subtotalLine) throw new Error("Não rolou montar as linhas do produto ae");
+	const item: BuyOrder = { order: Number(pedido), items: new Array<BuyProduct>(), subtotal: undefined };
 
-	const productId = readHeader(headerLine);
-
-	const items: Array<RawBuyProduct> = readItems(itemLines, orderId, productId);
-
-	const subtotal = readSubtotal(productId, subtotalLine.text);
-
-	return { orderId, productId, items, subtotal };
+	return item;
 }
 
-function readHeader(line: Line) {
-	return line.text.split(" ")[0];
+function interpretSubitem(text: string, order: string): BuyProduct {
+	const [firstString, secondString] = splitLineInTwo(text, order);
+
+	const { pedido, item, emissao, entrega, cliente, eqtn, produto, beneficiario } = readFirstString(firstString, order);
+	const { liga, tamanho, corte, amarracoes, pecas, liquido, bruto, solicitado, atendido, ca, observacao, etiqueta } =
+		readSecondString(secondString);
+
+	const buyProduct: BuyProduct = {
+		pedido: parseInt(pedido),
+		item: parseInt(item),
+		emissao: new Date(emissao),
+		entrega: new Date(entrega),
+		cliente: cliente,
+		eqtn: eqtn,
+		produto: produto,
+		beneficiario: beneficiario,
+		liga: parseInt(liga),
+		tamanho: tamanho,
+		corte: parseInt(corte),
+		amarracoes: parseInt(amarracoes),
+		pecas: parseInt(pecas),
+		liquido: parseFloat(liquido),
+		bruto: parseFloat(bruto),
+		solicitado: parseInt(solicitado),
+		atendido: parseInt(atendido),
+		ca: ca,
+		observacao: observacao,
+		etiqueta: etiqueta,
+	};
+
+	return buyProduct;
 }
 
-function readItems(items: Array<Line>, orderId: string, productId: string): Array<RawBuyProduct> {
-	return items.map((line: Line) => {
-		const [firstString, secondString] = splitLineInTwo(productId, line);
+function interpretSubtotal(text: string): BuyOrder["subtotal"] {
+	const subtotalRegExp = new RegExp(
+		[
+			`(?<produto>\\w-\\d+)`,
+			`(?<amarracoes>\\d+\\samr)`,
+			`(?<pecas>\\d+\\spçs)`,
+			`(?<liquido>\\b\\d+,\\d{2})`,
+			`(?<bruto>\\b\\d+,\\d{2}\\skg)`,
+		].join("\\s"),
+		"g"
+	);
 
-		const firstPart = readFirstString(firstString, orderId, productId);
-		const secondPart = readSecondString(secondString);
+	const [, produto, amarracoes, pecas, liquido, bruto] = subtotalRegExp.exec(text) || [];
 
-		return { ...firstPart, ...secondPart };
-	});
-}
+	const subtotal: BuyOrder["subtotal"] = {
+		produto: Number(produto),
+		amarracoes: parseInt(amarracoes),
+		pecas: parseInt(pecas),
+		liquido: parseFloat(liquido),
+		bruto: parseFloat(bruto),
+	};
 
-function readSubtotal(produto: string, subtotalString: string) {
-	const amarracoesRegExp = `(?<amarracoes>\\s\\d+\\s)`;
-	const pecasRegExp = `(?<pecas>\\s\\d+\\s)`;
-	const liquidoRegExp = `(?<liquido>\\b\\d+,\\d{2})`;
-	const brutoRegExp = `(?<bruto>\\b\\d+,\\d{2})`;
-
-	const subtotalRegExp = new RegExp([amarracoesRegExp, pecasRegExp, liquidoRegExp, brutoRegExp].join(".*"), "g");
-	const [, amarracoes, pecas, liquido, bruto] = subtotalRegExp.exec(subtotalString) || [];
-
-	return { produto, amarracoes, pecas, liquido, bruto };
+	return subtotal;
 }
 
 /*
@@ -92,15 +161,13 @@ function readSubtotal(produto: string, subtotalString: string) {
  *  Pedido	 Beneficiário   Tamaho       Etiqueta
  * [ - - - - - - - - - - ] [ - - - - - - - - - - ]
  */
-function splitLineInTwo(product: string, line: Line) {
-	const text = line.text;
-
-	const regexPerfil = new RegExp(`(?<perfil>` + product + `)`, "g");
+function splitLineInTwo(text: string, order: string) {
+	const regexPerfil = new RegExp(`(?<perfil>` + order + `)`, "g");
 	const indexPerfil = regexPerfil.exec(text)?.index;
 	if (!indexPerfil) throw new Error();
 
 	const firstBlockStart = 0;
-	const firstBlockEnd = indexPerfil + product.length;
+	const firstBlockEnd = indexPerfil + order.length;
 	const firstBlock = text.substring(firstBlockStart, firstBlockEnd);
 
 	const secondBlockStart = firstBlockEnd;
@@ -114,7 +181,7 @@ function splitLineInTwo(product: string, line: Line) {
 	Para o este conjunto de instruções, convém preparar o texto
 	retirando todos os espaços em branco.
 
-	1. Encontrar <Pedido> por RegEx de correspondência exata
+	1. Encontrar <Pedido> por RegEx de número
 	2. Encontrar <Emissão> por RegEx de data
 	3. Deduzir <Item> que deve estar localizado entre pedido e emissão
 	4. Encontrar <Entrega> por RegEx de data
@@ -122,13 +189,13 @@ function splitLineInTwo(product: string, line: Line) {
 	6. Deduzir <EqTn> buscando dois caracteres para trás do início de perfil
 	7. Ignorar <Cliente> e <Beneficiário>
  */
-function readFirstString(text: string, orderId: string, productId: string) {
+function readFirstString(text: string, productId: string) {
 	text.replaceAll(" ", "");
 
 	if (!text) throw new Error("text");
 
 	const pedidoString = text;
-	const pedidoRegExp = new RegExp(`^(?<pedido>` + orderId + `)`, "g");
+	const pedidoRegExp = new RegExp(`^(?<pedido>\\d+\\b)`, "g");
 	const pedidoRegExpExec = pedidoRegExp.exec(pedidoString);
 	const pedido = pedidoRegExpExec?.at(1);
 
@@ -269,47 +336,4 @@ function readSecondString(text: string) {
 	if (!etiqueta) throw new Error("etiqueta");
 
 	return { liga, tamanho, corte, amarracoes, pecas, liquido, bruto, solicitado, atendido, ca, observacao, etiqueta };
-}
-
-function convertToBuyOrder(rawBuyOrder: RawBuyOrder) {
-	const orderId: BuyOrder["orderId"] = Number(rawBuyOrder.orderId);
-
-	const productId: BuyOrder["productId"] = rawBuyOrder.productId;
-
-	const items: BuyOrder["items"] = rawBuyOrder.items.map((rawBuyProduct) => {
-		const buyItem: BuyProduct = {
-			pedido: parseInt(rawBuyProduct.pedido),
-			item: parseInt(rawBuyProduct.item),
-			emissao: new Date(rawBuyProduct.emissao),
-			entrega: new Date(rawBuyProduct.entrega),
-			cliente: rawBuyProduct.cliente,
-			eqtn: rawBuyProduct.eqtn,
-			produto: rawBuyProduct.produto,
-			beneficiario: rawBuyProduct.beneficiario,
-			liga: parseInt(rawBuyProduct.liga),
-			tamanho: rawBuyProduct.tamanho,
-			corte: parseInt(rawBuyProduct.corte),
-			amarracoes: parseInt(rawBuyProduct.amarracoes),
-			pecas: parseInt(rawBuyProduct.pecas),
-			liquido: parseFloat(rawBuyProduct.liquido),
-			bruto: parseFloat(rawBuyProduct.bruto),
-			solicitado: parseInt(rawBuyProduct.solicitado),
-			atendido: parseInt(rawBuyProduct.atendido),
-			ca: rawBuyProduct.ca,
-			observacao: rawBuyProduct.observacao,
-			etiqueta: rawBuyProduct.etiqueta,
-		};
-
-		return buyItem;
-	});
-
-	const subtotal: BuyOrder["subtotal"] = {
-		produto: rawBuyOrder.subtotal.produto,
-		amarracoes: parseInt(rawBuyOrder.subtotal.amarracoes),
-		pecas: parseInt(rawBuyOrder.subtotal.pecas),
-		liquido: parseFloat(rawBuyOrder.subtotal.liquido),
-		bruto: parseFloat(rawBuyOrder.subtotal.bruto),
-	};
-
-	return { orderId, productId, items, subtotal };
 }

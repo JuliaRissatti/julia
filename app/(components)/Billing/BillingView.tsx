@@ -1,19 +1,15 @@
 "use client";
 
-import OrdersTabPanel from "@/app/(components)/OrdersTabPanel/orders-tab-panel";
+import OrdersTabPanel from "@/app/(components)/ClientOrders/ClientOrdersView";
 
-import { Billing } from "../../Model/Billing";
+import { Billing } from "./Billing";
 
 export default function BillingView(parameter: { billing: Billing }) {
 	const billing = parameter.billing;
 
 	return (
 		<>
-			<div className="grid grid-cols-7 grid-flow-row grid-rows-5 bg-indigo-dye m-5 p-2">
-				<h1 className="col-span-full text-lg font-semibold text-center">{parameter.billing.cliente}</h1>
 
-				<OrdersTabPanel billing={billing} />
-			</div>
 		</>
 	);
 }

@@ -1,5 +1,7 @@
-import { Billing, RawBilling } from "@/app/models/billing/billing";
 import { Line, Page } from "tesseract.js";
+
+import { RawBilling, Billing } from "../Billing/Billing";
+import { Orders } from "../Order/Orders";
 
 export default function readBilling(pages: Array<Page>) {
 	// Concatenate all Lines from all Pages
@@ -51,10 +53,10 @@ function convertToString(billing: Array<Line>) {
 	return { header, orders, subtotal };
 }
 
-function convertToBilling(rawBilling: RawBilling) {
+function convertToBilling(rawBilling: RawBilling): Billing {
 	const { filial, cliente } = readHeader(rawBilling.header);
 
-	const pedidos: Array<number> = rawBilling.orders.map((rawOrder) => readOrder(rawOrder));
+	const pedidos: Array<Orders> = rawBilling.orders.map((rawOrder) => readOrder(rawOrder));
 
 	const subtotal = rawBilling.subtotal;
 
@@ -70,7 +72,7 @@ function readHeader(line: Line) {
 
 function readOrder(orderLine: Line) {
 	const orderString = orderLine.words.at(-1)?.text;
-	const orderNumber = Number(orderString);
+	const number = Number(orderString);
 
-	return orderNumber;
+	return { number };
 }
