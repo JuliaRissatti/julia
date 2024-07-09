@@ -77,11 +77,13 @@ function extractBuyOrders(lines: Array<Line>, order: string) {
 }
 
 function interpretItem(text: string, order: string): BuyOrder {
-	const itemRegExp = new RegExp(`^(?<item>\\w+\\-\\d+)`, `g`);
-	const itemRegExpExec = itemRegExp.exec(text);
-	const item = itemRegExpExec?.at(1);
+	const item = text.split(" ").at(0);
 
 	if (!item) throw new Error("Item");
+
+	// Transporte ?
+
+	// Beneficiador ?
 
 	const buyOrder: BuyOrder = { order, item, items: new Array<BuyProduct>(), subtotal: undefined };
 
@@ -118,7 +120,67 @@ function interpretItem(text: string, order: string): BuyOrder {
 	17. Encontrar <CA> por RegEx de correspondência exata
 	18. Deduzir <Observação> que deve estar localizado após CA
  */
-function interpretSubitem(text: string, buyOrder: BuyOrder): BuyProduct {
+function interpretSubitem(text: string, buyOrder: BuyOrder) {
+	const [textBeforePerfil, textAfterPerfil] = text.split(buyOrder.item);
+
+	const [, pedido, item, emissao, entrega, cliente, eqtn] =
+		new RegExp(
+			[
+				`^(?<pedido>` + buyOrder.order + `)`,
+				`(?<item>\\d+)`,
+				`(?<emissao>\\d{2}\\/\\d{2}\\/\\d{4})`,
+				`(?<entrega>\\d{2}\\/\\d{2}\\/\\d{4})`,
+				`(?<cliente>\\w)`,
+				`(?<eqtn>\\w\\d)`,
+			].join(),
+			`g`
+		).exec(textBeforePerfil.replaceAll(" ", "")) || [];
+
+	const [, liga, tamanho, corte, amarracoes, pecas, liquido, bruto, solicitado, atendido, ca, observacao] =
+		new RegExp(
+			[
+				`(?<liga>\\d+)`,
+				`(?<tamanho>[\\w|\\d]{2})`,
+				`(?<corte>\\d+)`,
+				`(?<amarracoes>\\d+)`,
+				`(?<pecas>\\d+)`,
+				`(?<liquido>\\d+,\\d{2})`,
+				`(?<bruto>\\d+,\\d{2})`,
+				`(?<solicitado>\\d+)`,
+				`(?<atendido>\\[\\w+|\\d+])`,
+				`(?<ca>N)`,
+				`(?<observacao>\\d+,\\d{2}%)`,
+			].join("\\s*"),
+			`g`
+		).exec(textAfterPerfil) || [];
+
+	const buyProduct = {
+		pedido: Number(pedido),
+		item: Number(pedido),
+		emissao: new Date(emissao),
+		entrega: new Date(entrega),
+		cliente,
+		eqtn,
+		perfil: buyOrder.item,
+		beneficiario: "",
+		liga: Number(pedido),
+		tamanho,
+		corte: Number(pedido),
+		amarracoes: Number(pedido),
+		pecas: Number(pedido),
+		liquido: Number(pedido),
+		bruto: Number(pedido),
+		solicitado: Number(pedido),
+		atendido: Number(pedido),
+		ca,
+		observacao,
+		etiqueta: "",
+	};
+
+	return buyProduct;
+}
+
+function interpretSubitem_Old(text: string, buyOrder: BuyOrder): BuyProduct {
 	text = text.trim();
 
 	const perfilString = text;
